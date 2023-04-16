@@ -1,0 +1,14 @@
+{
+    "autoload": {
+        "psr-4": {
+            "getinstance\\utils\\aichat\\": ["src/", "test"]
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "require": {
+        "orhanerday/open-ai": "*",
+        "gioni06/gpt3-tokenizer": "^1.1"
+    }
+}

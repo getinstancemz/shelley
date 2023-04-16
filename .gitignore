@@ -1,0 +1,4 @@
+vendor
+slush
+conf/chat.json
+data/chatbot.db

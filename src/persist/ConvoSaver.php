@@ -1,0 +1,159 @@
+<?php
+
+namespace getinstance\utils\aichat\persist;
+
+class ConvoSaver
+{
+    private \PDO $pdo;
+    private int $convo_id;
+
+    public function __construct(private string $datadir, $convoname)
+    {
+        if (! file_exists($datadir)) {
+            mkdir($datadir, 0755) || throw new \Exception("could not create directory ($datadir)");
+        }
+        $db_file = realpath($datadir).'/chatbot.db';
+        $this->pdo = new \PDO("sqlite:" . $db_file,
+            null, null, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+        );
+        $this->useConvo($convoname);
+    }
+
+    public function getConvo(): array
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM conversation WHERE id = :id");
+        $stmt->execute([':id' => $this->convo_id]);
+        $convo = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($convo === false) {
+            throw new \Exception("Conversation not found.");
+        }
+
+        return $convo;
+    }
+
+    public function createOrAccessDb() {
+        // Create tables if they don't exist
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS conversation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT
+        )");
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS convoconf (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            confkey TEXT,
+            confval TEXT,
+            conversation_id INTEGER,
+            FOREIGN KEY (conversation_id) REFERENCES conversation(id)
+        )");
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT,
+            text TEXT,
+            summary TEXT,
+            conversation_id INTEGER,
+            type TEXT,
+            FOREIGN KEY (conversation_id) REFERENCES conversation(id)
+        )");
+    }
+
+    public function getConf()
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM convoconf WHERE conversation_id = :cid");
+        $stmt->execute([':cid' => $this->convo_id]);
+        $conf = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if ($conf === false) {
+            return [];
+        }
+        $ret = [];
+        foreach ($conf as $row) {
+            $ret[$row['confkey']] = $row['confval'];
+        }
+
+        return $ret;
+    }
+
+    public function setConfVal($confkey, $confval)
+    {
+        $oldconf = $this->getConf();
+        if (isset($oldconf[$confkey])) {
+            $stmt = $this->pdo->prepare("UPDATE convoconf SET 
+                conversation_id = :conversation_id,
+                confkey = :confkey,
+                confval = :confval
+                WHERE conversation_id=:conversation_id AND confkey=:confkey");
+        } else {
+            $stmt = $this->pdo->prepare("INSERT INTO convoconf (conversation_id, confkey, confval)
+                VALUES (:conversation_id, :confkey, :confval)");
+        }
+        $stmt->execute([
+            ':conversation_id' => $this->convo_id,
+            ':confkey' => $confkey,
+            ':confval' => $confval,
+        ]);
+    }
+
+    public function useConvo(string $name)
+    {
+        $this->convoname = $name;
+        $this->createOrAccessDb();
+        $stmt = $this->pdo->prepare("SELECT id FROM conversation WHERE name = :name");
+        $stmt->execute([':name' => $name]);
+        $convo_id = $stmt->fetchColumn();
+
+        if ($convo_id === false) {
+            $stmt = $this->pdo->prepare("INSERT INTO conversation (name) VALUES (:name)");
+            $stmt->execute([':name' => $name]);
+            $convo_id = $this->pdo->lastInsertId();
+        }
+        $this->convo_id = $convo_id;
+        return $convo_id;
+    }
+
+    public function saveMessage($role, $message, $type="text")
+    {
+        //print "**** saving messsage...\n\n";
+        //$summary="", 
+        //$stmt = $this->pdo->prepare("INSERT INTO messages (role, text, conversation_id, type) VALUES (:role, :text, :conversation_id, :summary, :type)");
+        $stmt = $this->pdo->prepare("INSERT INTO messages (role, text, conversation_id, type) VALUES (:role, :text, :conversation_id, :type)");
+        $stmt->execute([
+            ':role' => $role,
+            ':text' => trim($message),
+            ':conversation_id' => $this->convo_id,
+            //':summary' => $summary,
+            ':type' => $type
+        ]);
+    }
+
+    public function updateMessage($id, $role, $message, $summary="", $type="text")
+    {
+        $stmt = $this->pdo->prepare("UPDATE messages SET role = :role, 
+            text = :text, summary = :summary, conversation_id = :conversation_id, type = :type WHERE id=:id");
+        $stmt->execute([
+            ':role' => $role,
+            ':text' => trim($message),
+            ':conversation_id' => $this->convo_id,
+            ':summary' => $summary,
+            ':type' => $type,
+            ':id' => $id,
+        ]);
+    }
+
+    public function getMessages(int $limit = null): array
+    {
+        $query = "SELECT * FROM messages WHERE conversation_id = :conversation_id ORDER BY id DESC";
+        if ($limit !== null) {
+            $query .= " LIMIT :limit";
+        }
+        $stmt = $this->pdo->prepare($query);
+        $stmt->bindValue(':conversation_id', $this->convo_id, \PDO::PARAM_INT);
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        return array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+    }
+
+}
