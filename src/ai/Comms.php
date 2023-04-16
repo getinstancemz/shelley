@@ -2,6 +2,7 @@
 
 namespace getinstance\utils\aichat\ai;
 use Orhanerday\OpenAi\OpenAi;
+use getinstance\utils\aichat\ai\models\Model;
 use Gioni06\Gpt3Tokenizer\Gpt3TokenizerConfig;
 use Gioni06\Gpt3Tokenizer\Gpt3Tokenizer;
 
@@ -9,10 +10,16 @@ class Comms
 {
     private string $secretKey;
     private Gpt3Tokenizer $tokenizer;
+    private Model $model;
 
-    public function __construct($secretKey)
+    public function __construct(Model $model, $secretKey)
     {
         $this->secretKey = $secretKey;
+        $this->model = $model;
+    }
+
+    public function getModel() {
+        return $this->model;
     }
 
     public function sendQuery(Messages $messages): string
@@ -60,19 +67,22 @@ class Comms
         print "## done\n\n";
         exit;
         */
-
         /*
         $response = "responding...";
         $messages->addMessage("assistant", $response);
         return $response;
         */
-
+        $max = $this->model->getMaxTokens();
+        // allow 20% of max for response
+        $responsemax = ($max * 0.2);
+        $contextmax = ($max-$responsemax);
+        $contextmax = ($contextmax)-($contextmax * 0.05);
         $open_ai = new OpenAi($this->secretKey);
         $completion = $open_ai->chat([
             'model' => 'gpt-4',
-            'messages' => $messages->toArray(20, 3000),
+            'messages' => $messages->toArray(40, $this->model->getMaxContext()),
             'temperature' => 0.5,
-            'max_tokens' => 4000,
+            'max_tokens' => $this->model->getMaxResponse(),
             'frequency_penalty' => 0,
             'presence_penalty' => 0.6,
         ]);

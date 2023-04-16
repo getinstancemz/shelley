@@ -2,6 +2,7 @@
 
 namespace getinstance\utils\aichat\control;
 use getinstance\utils\aichat\ai\Comms;
+use getinstance\utils\aichat\ai\models\GPT4;
 use getinstance\utils\aichat\ai\Messages;
 use getinstance\utils\aichat\persist\ConvoSaver;
 
@@ -14,7 +15,7 @@ class Runner
 
     public function __construct(object $conf, ConvoSaver $saver) {
         $this->conf = $conf;
-        $this->comms = new Comms($this->conf->openai->token);
+        $this->comms = new Comms(new GPT4(), $this->conf->openai->token);
         $this->saver = $saver;
         $convoconf = $saver->getConf();
         $premise = $convoconf["premise"] ?? null;
@@ -23,6 +24,10 @@ class Runner
 
     public function getSaver() {
         return $this->saver;
+    }
+
+    public function getComms() {
+        return $this->comms;
     }
 
     public function getMessages() {
