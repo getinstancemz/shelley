@@ -11,6 +11,7 @@ class Comms
     private string $secretKey;
     private Gpt3Tokenizer $tokenizer;
     private Model $model;
+    private float $responseProportion = 0.2;
 
     public function __construct(Model $model, $secretKey)
     {
@@ -58,6 +59,12 @@ class Comms
         return $response;
 	}
 
+    public function setResponseProportion(float $prop) {
+        if ($prop < 0.1 || $prop > 0.8) {
+            throw new \Exception("the response allowance should be between 10% (0.1) and 80% (0.8)");
+        }
+        $this->responseProportion = $prop;
+    }
     public function sendQueryChat(Messages $messages): string
     {
         //return "dummy2";
@@ -74,7 +81,7 @@ class Comms
         */
         $max = $this->model->getMaxTokens();
         // allow 20% of max for response
-        $responsemax = ($max * 0.2);
+        $responsemax = ($max * $this->responseProportion);
         $contextmax = ($max-$responsemax);
         $contextmax = ($contextmax)-($contextmax * 0.05);
         $open_ai = new OpenAi($this->secretKey);

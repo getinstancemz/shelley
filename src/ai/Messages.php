@@ -36,6 +36,11 @@ class Messages
         $this->premise = $premise;
     }
 
+    public function resetMessages()
+    {
+        $this->messages = [];
+    }
+
     public function toArray($maxrows=0, $maxtokens=0) {
         $desc = [
             [ "role" => "system", "content" => $this->premise ],

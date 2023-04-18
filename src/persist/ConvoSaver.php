@@ -1,6 +1,7 @@
 <?php
 
 namespace getinstance\utils\aichat\persist;
+use getinstance\utils\aichat\ai\Comms;
 
 class ConvoSaver
 {
@@ -51,7 +52,8 @@ class ConvoSaver
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             role TEXT,
             text TEXT,
-            summary TEXT,
+            tokencount DEFAULT 0,
+            summary DEFAULT \"\",
             conversation_id INTEGER,
             type TEXT,
             FOREIGN KEY (conversation_id) REFERENCES conversation(id)
@@ -113,13 +115,16 @@ class ConvoSaver
 
     public function saveMessage($role, $message, $type="text")
     {
+        //findme
         //print "**** saving messsage...\n\n";
         //$summary="", 
         //$stmt = $this->pdo->prepare("INSERT INTO messages (role, text, conversation_id, type) VALUES (:role, :text, :conversation_id, :summary, :type)");
-        $stmt = $this->pdo->prepare("INSERT INTO messages (role, text, conversation_id, type) VALUES (:role, :text, :conversation_id, :type)");
+        $tokens = Comms::countTokens($message);
+        $stmt = $this->pdo->prepare("INSERT INTO messages (role, text, tokencount, conversation_id, type) VALUES (:role, :text, :tokencount, :conversation_id, :type)");
         $stmt->execute([
             ':role' => $role,
             ':text' => trim($message),
+            ':tokencount' => $tokens,
             ':conversation_id' => $this->convo_id,
             //':summary' => $summary,
             ':type' => $type
@@ -138,6 +143,17 @@ class ConvoSaver
             ':type' => $type,
             ':id' => $id,
         ]);
+    }
+
+    public function getUnsummarisedMessages(int $limit): array
+    {
+        $query = "SELECT * FROM messages WHERE summary='' AND conversation_id = :conversation_id ORDER BY id DESC LIMIT :limit";
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute([
+            ':conversation_id' => $this->convo_id, 
+            ':limit' => $limit
+        ]);
+        return array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     public function getMessages(int $limit = null): array

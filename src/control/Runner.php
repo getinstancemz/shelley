@@ -3,6 +3,7 @@
 namespace getinstance\utils\aichat\control;
 use getinstance\utils\aichat\ai\Comms;
 use getinstance\utils\aichat\ai\models\GPT4;
+use getinstance\utils\aichat\ai\models\GPT35;
 use getinstance\utils\aichat\ai\Messages;
 use getinstance\utils\aichat\persist\ConvoSaver;
 
@@ -10,16 +11,31 @@ class Runner
 {
     private object $conf;
     private Messages $messages;
+    private Messages $ctl;
     private ConvoSaver $saver;
     private string $datadir;
 
     public function __construct(object $conf, ConvoSaver $saver) {
         $this->conf = $conf;
         $this->comms = new Comms(new GPT4(), $this->conf->openai->token);
+
+        $this->ctlcomms = new Comms(new GPT35(), $this->conf->openai->token);
+        $this->ctlcomms->setResponseProportion(0.8);
+
         $this->saver = $saver;
         $convoconf = $saver->getConf();
         $premise = $convoconf["premise"] ?? null;
         $this->messages = new Messages($premise);
+        $this->ctl = new Messages("You are an LLM management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicating well");
+        $this->initMessages();
+    }
+
+    private function initMessages() {
+        // load up messages from db for this chat
+        $dbmsgs = $this->saver->getMessages(50); 
+        foreach($dbmsgs as $dbmsg) {
+            $this->messages->addMessage($dbmsg['role'], $dbmsg['text']);
+        }
     }
 
     public function getSaver() {
@@ -56,6 +72,23 @@ class Runner
         $this->saver->saveMessage("assistant", $resp);
         $this->saver->setConfVal("lastmessage", (new \DateTime("now"))->format("c"));
         return $resp;
+    }
+
+    public function summariseMostRecent() {
+        $dbmsgs = $this->saver->getUnsummarisedMessages(3); 
+        if (! count($dbmsgs)) {
+            return;
+        }
+        $prompt = "Please summarise this message in 300 characters or fewer: ";
+        foreach($dbmsgs as $dbmsg) {
+            if (strlen($dbmsg['text']) <= 300) {
+                $summary = $dbmsg['text'];
+            } else {
+                $this->ctl->addMessage("user", $prompt.$dbmsg['text']);
+                $summary = $this->ctlcomms->sendQuery($this->ctl);
+            }
+            $this->saver->updateMessage($dbmsg['id'], $dbmsg['role'], $dbmsg['text'], $summary);
+        }
     }
 
     public function save(string $convo, Messages $messages) {

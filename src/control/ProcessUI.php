@@ -59,13 +59,7 @@ class ProcessUI
     public function run()
     {
         $msgs = $this->runner->getMessages();
-
-        // load up messages from db for this chat
-        $dbmsgs = $this->saver->getMessages(50); 
-        foreach($dbmsgs as $dbmsg) {
-            $msgs->addMessage($dbmsg['role'], $dbmsg['text']);
-        }
-        $this->initSummarise($msgs);
+       $this->initSummarise($msgs);
 
         $input = "";
         while (($input = $this->process("USER      > ")) != "q\n") {
@@ -78,6 +72,9 @@ class ProcessUI
                 $resp .= $e->getMessage();
             }
             print "ASSISTANT > {$resp} \n";
+            print "# summarising...";
+            $this->runner->summariseMostRecent();
+            print " done\n";
         }
     }
 
@@ -127,21 +124,6 @@ class ProcessUI
 			$buffer .= $input . "\n";
 		}
 	}
- 
-    private function old_processMulti(string &$buffer) {
-        print "# multi-mode on use /e to send buffer\n";
-        //while ($input = fgets(STDIN)) {
-        while ($input = readline()) {
-            if ($this->isCommand($input, $buffer)) {
-                continue;
-            }
-            if ((new ArbitraryCommand($this->runner, "e"))->matches($input)) {
-                print "# sending\n";
-                return $buffer;
-            }
-            $buffer .= $input . "\n";
-        }
-    }
 
     private function isCommand(string $input, string &$buffer)
     {
