@@ -26,16 +26,18 @@ class Runner
         $convoconf = $saver->getConf();
         $premise = $convoconf["premise"] ?? null;
         $this->messages = new Messages($premise);
-        $this->ctl = new Messages("You are an LLM management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicating well");
+        $this->ctl = new Messages("You are an LLM management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicate well");
         $this->initMessages();
     }
 
     private function initMessages() {
         // load up messages from db for this chat
-        $dbmsgs = $this->saver->getMessages(50); 
+        $dbmsgs = $this->saver->getMessages(100); 
         foreach($dbmsgs as $dbmsg) {
-            $this->messages->addMessage($dbmsg['role'], $dbmsg['text']);
+            $this->messages->addMessage($dbmsg['role'], $dbmsg['text'], $dbmsg['tokencount'], $dbmsg['summary']);
         }
+
+    //public function addMessage(string $role, string $message, int $tokens=0, string $summary="", int $summarytokens=0 ) {
     }
 
     public function getSaver() {

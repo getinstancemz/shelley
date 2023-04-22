@@ -45,6 +45,8 @@ class Comms
 			'engine' => 'text-davinci-003',
 			'prompt' => $messages->toPrompt(5),
 			'temperature' => 0.5,
+			//'temperature' => 0.1,
+			//'temperature' => 0.9,
 			'max_tokens' => 400,
 			'frequency_penalty' => 0,
 			'presence_penalty' => 0.6,
@@ -86,8 +88,8 @@ class Comms
         $contextmax = ($contextmax)-($contextmax * 0.05);
         $open_ai = new OpenAi($this->secretKey);
         $completion = $open_ai->chat([
-            'model' => 'gpt-4',
-            'messages' => $messages->toArray(40, $this->model->getMaxContext()),
+            'model' => $this->model->getName(),
+            'messages' => $messages->toArray(100, $this->model->getMaxContext()),
             'temperature' => 0.5,
             'max_tokens' => $this->model->getMaxResponse(),
             'frequency_penalty' => 0,

@@ -24,8 +24,14 @@ class Messages
         $this->trunc = $size;
     }
 
-    public function addMessage(string $role, string $message) {
-        $this->messages[] = ["role" => $role, "content" => trim($message)];
+    public function addMessage(string $role, string $message, int $tokens=0, string $summary="", int $summarytokens=0 ) {
+        $this->messages[] = [
+            "role" => $role, 
+            "content" => trim($message),
+            "tokens" => $tokens,
+            "summary" => $summary,
+            "summarytokens" => $summarytokens
+        ];
     }
 
     public function getPremise() {
@@ -68,15 +74,15 @@ class Messages
         // reverse because we want to privilege recent messages
         $context = array_reverse($context);
         foreach ($context as $message) {
-            $newsize = ($size + $this->getSize($message));
+            $newsize = ($size + $this->summariseAndSize($message));
             if ($newsize > $available) {
-                $newsize = ($size + $message['shortsize']);
+                $newsize = ($size + $message['summarytokens']);
                 // if still too big we're done
                 if ($newsize > $available) {
                     return array_merge( $premise, $ret, [ $last ] );
                 }
                 // short version fits but we're on short rations now
-                $message['content'] = $message['short'];
+                $message['content'] = $message['summary'];
             }
             // add to the beginning of $ret
             array_unshift($ret, $message);
@@ -87,24 +93,27 @@ class Messages
         return array_merge( $premise, $ret, [ $last ] );
     }
 
-    private function getSize(array &$msg): int
+    private function summariseAndSize(array &$msg): int
     {
-        $size = Comms::countTokens($msg['content']);
-        $msg['size'] = $size;
-        if (! isset($msg['short'])) {
-            $msg['short'] = substr($msg['content'], 0, $this->trunc);
-            $msg['shortsize'] = Comms::countTokens($msg['short']);
+        if (! isset($msg['tokens']) || $msg['tokens'] <= 0) {
+            $msg['tokens'] = Comms::countTokens($msg['content']);
         }
-        return $size;
+        if (! isset($msg['summary']) || empty($msg['summary'])) {
+            $msg['summary'] = substr($msg['content'], 0, $this->trunc);
+        }
+        if (! isset($msg['summarytokens']) || empty($msg['summarytokens'])) {
+            $msg['summarytokens'] = Comms::countTokens($msg['summary']);
+        }
+        return $msg['tokens'];
     }
 
     private function checkRequiredMessages(array &$premise, array &$last, int $available)
     {
         $size = 0;
         foreach ($premise as $msg) {
-            $size += $this->getSize($msg);
+            $size += $this->summariseAndSize($msg);
         }
-        $size += $this->getSize($last);
+        $size += $this->summariseAndSize($last);
         // premise and the last message are non-negotiable
         if ($size > $available) {
             throw new \Exception("The message exceeds the available space ({$available}) - size: $size");
