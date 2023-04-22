@@ -5,35 +5,44 @@ namespace getinstance\utils\aichat\ai;
 /* listing 012.02 */
 class Messages
 {
-    private string $premise;
+    private string $premise = "You are an interested, inquisitive and helpful assistant";
     private array $messages = [];
     private int $trunc = 1000;
 
-    private int $maxtokens = 4000;
-
-    public function __construct(?string $premise=null)
+    public function __construct()
     {
-        if (is_null($premise)) {
-            $premise = "You are an interested, inquisitive and helpful assistant";
-        }
-        $this->premise = $premise;
     }
 
-    public function setTrunc(int $size)
+    // will only act on newly added messages without an existing summary
+    public function setTrunc(int $trunc) {
+        $this->trunc = $trunc;
+    }
+
+    private function makeSummary(string $content, string $summary): string
     {
-        $this->trunc = $size;
+        return (empty($summary)) ? substr($content, 0, $this->trunc) : $summary;
+    }
+
+    private function getContentSize(string $content, int $tokens): int
+    {
+        return ($tokens > 0) ? $tokens :  Comms::countTokens($content);
+    }
+
+    private function makeMessage(string $role, string $message, int $tokens=0, string $summary="", int $summarytokens=0 ) {
+        $msg = [
+            "role" => $role, 
+            "content" => trim($message),
+            "tokens" => $this->getContentSize($message, $tokens),
+            "summary" => $this->makeSummary($message, $summary),
+        ];
+        $msg["summarytokens"]  = $this->getContentSize($msg['summary'], $summarytokens);
+        return $msg;
     }
 
     public function addMessage(string $role, string $message, int $tokens=0, string $summary="", int $summarytokens=0 ) {
-        $this->messages[] = [
-            "role" => $role, 
-            "content" => trim($message),
-            "tokens" => $tokens,
-            "summary" => $summary,
-            "summarytokens" => $summarytokens
-        ];
+        $this->messages[] = $this->makeMessage($role, $message, $tokens, $summary, $summarytokens); 
     }
-
+    
     public function getPremise() {
         return $this->premise;
     }
@@ -49,11 +58,10 @@ class Messages
 
     public function toArray($maxrows=0, $maxtokens=0) {
         $desc = [
-            [ "role" => "system", "content" => $this->premise ],
-            [ "role" => "user", "content" => $this->premise . " Do you understand this instruction?" ],
-            [ "role" => "assistant", "content" => "I understand. I am ready." ],
+            $this->makeMessage("system", $this->premise),
+            $this->makeMessage("user", $this->premise . " Do you understand this instruction?" ),
+            $this->makeMessage("assistant", "I understand. I am ready.")
         ];
-
         $messages = $this->messages;
         if ($maxrows > 0) {
             $messages = array_slice($this->messages, ($maxrows*-1));
@@ -74,7 +82,7 @@ class Messages
         // reverse because we want to privilege recent messages
         $context = array_reverse($context);
         foreach ($context as $message) {
-            $newsize = ($size + $this->summariseAndSize($message));
+            $newsize = ($size + $message['tokens']);
             if ($newsize > $available) {
                 $newsize = ($size + $message['summarytokens']);
                 // if still too big we're done
@@ -93,27 +101,13 @@ class Messages
         return array_merge( $premise, $ret, [ $last ] );
     }
 
-    private function summariseAndSize(array &$msg): int
-    {
-        if (! isset($msg['tokens']) || $msg['tokens'] <= 0) {
-            $msg['tokens'] = Comms::countTokens($msg['content']);
-        }
-        if (! isset($msg['summary']) || empty($msg['summary'])) {
-            $msg['summary'] = substr($msg['content'], 0, $this->trunc);
-        }
-        if (! isset($msg['summarytokens']) || empty($msg['summarytokens'])) {
-            $msg['summarytokens'] = Comms::countTokens($msg['summary']);
-        }
-        return $msg['tokens'];
-    }
-
     private function checkRequiredMessages(array &$premise, array &$last, int $available)
     {
         $size = 0;
         foreach ($premise as $msg) {
-            $size += $this->summariseAndSize($msg);
+            $size += $msg['tokens'];
         }
-        $size += $this->summariseAndSize($last);
+        $size += $last['tokens'];
         // premise and the last message are non-negotiable
         if ($size > $available) {
             throw new \Exception("The message exceeds the available space ({$available}) - size: $size");

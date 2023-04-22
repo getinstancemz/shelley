@@ -13,7 +13,7 @@ final class MessagesTest extends TestCase
     {
         $words = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
         $role = "assistant";
-        /*
+
         $messages = new Messages();
 
         $messages->setTrunc(5);
@@ -42,6 +42,7 @@ final class MessagesTest extends TestCase
         }
 
         $arr = $messages2->toArray(20, 500);
+
         // will have been truncated
         $this->assertEquals("one o", $arr[3]['content']);
         $this->assertEquals($content, $arr[12]['content']);
@@ -49,7 +50,7 @@ final class MessagesTest extends TestCase
         // print $content;
         // $arr = $messages2->toArray();
         // print_r($arr);
-        */ 
+        //
         $messages3 = new Messages();
         $messages3->setTrunc(5);
         foreach ($words as $word) {
