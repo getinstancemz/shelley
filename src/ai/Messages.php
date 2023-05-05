@@ -2,7 +2,6 @@
 
 namespace getinstance\utils\aichat\ai;
 
-/* listing 012.02 */
 class Messages
 {
     private string $premise = "You are an interested, inquisitive and helpful assistant";
