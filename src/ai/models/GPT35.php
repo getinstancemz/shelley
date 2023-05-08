@@ -2,7 +2,8 @@
 
 namespace getinstance\utils\aichat\ai\models;
 
-class GPT35 extends Model {
+class GPT35 extends Model
+{
     public function getName(): string
     {
         return "gpt-3.5-turbo";

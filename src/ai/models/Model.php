@@ -2,10 +2,11 @@
 
 namespace getinstance\utils\aichat\ai\models;
 
-abstract class Model {
-    public abstract function getName(): string;
-    public abstract function getMaxTokens(): int;
-    public abstract function getMode(): string;
+abstract class Model
+{
+    abstract public function getName(): string;
+    abstract public function getMaxTokens(): int;
+    abstract public function getMode(): string;
 
     /**
      * The amount to allow for a response
@@ -23,7 +24,7 @@ abstract class Model {
      */
     public function getMaxContext(): int
     {
-        $contextmax = ($this->getMaxTokens()-$this->getMaxResponse());
+        $contextmax = ($this->getMaxTokens() - $this->getMaxResponse());
         return ($contextmax - ($contextmax * 0.05));
     }
 }

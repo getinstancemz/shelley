@@ -2,7 +2,7 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
-
+/* listing 01.20 */
 class FileCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
@@ -18,4 +18,3 @@ class FileCommand extends AbstractCommand
         return "file";
     }
 }
-

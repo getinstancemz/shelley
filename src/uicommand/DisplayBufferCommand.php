@@ -2,7 +2,6 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
-
 class DisplayBufferCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
@@ -18,4 +17,3 @@ class DisplayBufferCommand extends AbstractCommand
         return 'buf';
     }
 }
-

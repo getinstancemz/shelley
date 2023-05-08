@@ -3,10 +3,12 @@
 
 require_once(__DIR__ . "/../vendor/autoload.php");
 
+/* listing 01.05 */
 use getinstance\utils\aichat\control\Runner;
 use getinstance\utils\aichat\control\ProcessUI;
 use getinstance\utils\aichat\persist\ConvoSaver;
 
+/* /listing 01.05 */
 function usage(?string $msg = null): string
 {
     $argv = $GLOBALS['argv'];
@@ -19,9 +21,13 @@ function usage(?string $msg = null): string
     return $usage;
 }
 
+/* listing 01.05 */
 function errorUsage(string $msg): void
 {
+    // ...
+/* /listing 01.05 */
     fputs(STDERR, usage($msg));
+/* listing 01.05 */
     exit(1);
 }
 

@@ -2,7 +2,6 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
-
 class RedoCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
@@ -16,4 +15,3 @@ class RedoCommand extends AbstractCommand
         return 'redo';
     }
 }
-

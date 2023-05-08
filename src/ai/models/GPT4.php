@@ -2,7 +2,8 @@
 
 namespace getinstance\utils\aichat\ai\models;
 
-class GPT4 extends Model {
+class GPT4 extends Model
+{
     public function getName(): string
     {
         return "gpt-4";

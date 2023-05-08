@@ -2,7 +2,6 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
-
 class PremiseCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
@@ -11,7 +10,7 @@ class PremiseCommand extends AbstractCommand
         // if empty then just report
         if (preg_match("/^\s*$/", $premise)) {
             print "# premise:\n";
-            print "# ". $this->runner->getPremise() . "\n";
+            print "# " . $this->runner->getPremise() . "\n";
             return;
         }
 
@@ -25,4 +24,3 @@ class PremiseCommand extends AbstractCommand
         return 'premise';
     }
 }
-
