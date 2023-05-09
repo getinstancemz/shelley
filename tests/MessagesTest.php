@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace getinstance\lazy\medium;
+namespace getinstance\utils\aichat\ai;
 
 use PHPUnit\Framework\TestCase;
 use getinstance\utils\aichat\ai\Messages;
+use getinstance\utils\aichat\ai\Message;
 
 final class MessagesTest extends TestCase
 {
@@ -16,11 +17,11 @@ final class MessagesTest extends TestCase
 
         $messages = new Messages();
 
-        $messages->setTrunc(5);
-        $messages->addMessage("user", "one one one");
-        $messages->addMessage("assistant", "two two two");
-        $messages->addMessage("user", "three three three");
-        $messages->addMessage("assistant", "four four four");
+        Message::$trunc = 5;
+        $messages->addNewMessage("user", "one one one");
+        $messages->addNewMessage("assistant", "two two two");
+        $messages->addNewMessage("user", "three three three");
+        $messages->addNewMessage("assistant", "four four four");
 
         // toArray() without constraints -- regurgitates
         $arr = $messages->toArray();
@@ -35,14 +36,12 @@ final class MessagesTest extends TestCase
 
         // messages -- we will limit tokens and let Messages truncate older content
         $messages2 = new Messages();
-        $messages2->setTrunc(5);
         foreach ($words as $word) {
-            $messages2->addMessage($role, $content = $this->dup($word, 100));
+            $messages2->addNewMessage($role, $content = $this->dup($word, 100));
             $role = ($role=="assistant")?"user":"assistant";
         }
 
         $arr = $messages2->toArray(20, 500);
-
         // will have been truncated
         $this->assertEquals("one o", $arr[3]['content']);
         $this->assertEquals($content, $arr[12]['content']);
@@ -52,9 +51,10 @@ final class MessagesTest extends TestCase
         // print_r($arr);
         //
         $messages3 = new Messages();
-        $messages3->setTrunc(5);
         foreach ($words as $word) {
-            $messages3->addMessage($role, $content = $this->dup($word, 100), str_word_count($content), "summary: $word");
+            $messages3->addMessage(
+                new Message(-1, $role, $content = $this->dup($word, 100), str_word_count($content), "summary: $word")
+            );
             $role = ($role=="assistant")?"user":"assistant";
         }
 

@@ -3,6 +3,7 @@
 namespace getinstance\utils\aichat\persist;
 
 use getinstance\utils\aichat\ai\Comms;
+use getinstance\utils\aichat\ai\Message;
 
 class ConvoSaver
 {
@@ -119,32 +120,45 @@ class ConvoSaver
         return $convo_id;
     }
 
-    public function saveMessage(string $role, string $message, int $tokencount, string $type = "text"): void
+    public function saveMessage(Message $message): Message
     {
-        $stmt = $this->pdo->prepare("INSERT INTO messages (role, text, tokencount, conversation_id, type) VALUES (:role, :text, :tokencount, :conversation_id, :type)");
-        $stmt->execute([
-            ':role' => $role,
-            ':text' => trim($message),
-            ':tokencount' => $tokencount,
-            ':conversation_id' => $this->convo_id,
-            //':summary' => $summary,
-            ':type' => $type
-        ]);
+        if ($message->getId() <= 0) {
+            return $this->addMessage($message);
+        } else {
+            return $this->updateMessage($message);
+        }
     }
 
-    public function updateMessage(int $id, string $role, string $message, string $tokencount, string $summary, int $summarytokencount, string $type = "text"): void
+    public function addMessage(Message $message): Message
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO messages (role, text, tokencount, conversation_id, summary, summarytokencount, type) VALUES (:role, :text, :tokencount, :conversation_id, :summary, :summarytokencount, :type)");
+        $stmt->execute([
+            ':role' => $message->getRole(),
+            ':text' => trim($message->getContent()),
+            ':tokencount' => $message->getTokenCount(),
+            ':conversation_id' => $this->convo_id,
+            ':summary' => $message->getSummary(),
+            ':summarytokencount' => $message->getSummaryTokenCount(),
+            ':type' => "text"
+        ]);
+        $message->setId($this->pdo->lastInsertId());
+        return $message;
+    }
+
+    public function updateMessage(Message $message): Message
     {
         $stmt = $this->pdo->prepare("UPDATE messages SET role = :role, 
             text = :text, summary = :summary, summarytokencount = :summarytokencount, conversation_id = :conversation_id, type = :type WHERE id=:id");
         $stmt->execute([
-            ':role' => $role,
-            ':text' => trim($message),
+            ':role' => $message->getRole(),
+            ':text' => trim($message->getContent()),
             ':conversation_id' => $this->convo_id,
-            ':summary' => $summary,
-            ':summarytokencount' => $summarytokencount,
-            ':type' => $type,
-            ':id' => $id,
+            ':summary' => $message->getSummary(),
+            ':summarytokencount' => $message->getSummaryTokenCount(),
+            ':type' => "text",
+            ':id' => $message->getId()
         ]);
+        return $message;
     }
 
     public function getUnsummarisedMessages(int $limit): array
@@ -155,7 +169,7 @@ class ConvoSaver
             ':conversation_id' => $this->convo_id,
             ':limit' => $limit
         ]);
-        return array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return $this->makeMessages(array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
     public function getMessages(int $limit = 0): array
@@ -171,6 +185,22 @@ class ConvoSaver
         }
         $stmt->execute();
 
-        return array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+        return $this->makeMessages(array_reverse($stmt->fetchAll(\PDO::FETCH_ASSOC)));
+    }
+
+    private function makeMessages(array $rawmessages): array
+    {
+        $ret = [];
+        foreach ($rawmessages as $dbmsg) {
+            $ret[] = new Message(
+                $dbmsg['id'],
+                $dbmsg['role'],
+                $dbmsg['text'],
+                (int)$dbmsg['tokencount'],
+                $dbmsg['summary'],
+                $dbmsg['summarytokencount']
+            );
+        }
+        return $ret;
     }
 }

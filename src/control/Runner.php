@@ -40,14 +40,8 @@ class Runner
     private function initMessages(): void
     {
         $dbmsgs = $this->saver->getMessages(100);
-        foreach ($dbmsgs as $dbmsg) {
-            $this->messages->addMessage(
-                $dbmsg['role'],
-                $dbmsg['text'],
-                (int)$dbmsg['tokencount'],
-                (string)$dbmsg['summary'],
-                $dbmsg['summarytokencount']
-            );
+        foreach ($dbmsgs as $msg) {
+            $this->messages->addMessage($msg);
         }
     }
 /* /listing 01.08 */
@@ -82,11 +76,11 @@ class Runner
     public function query(string $message, ?Messages $messages = null)
     {
         $msgs = $messages ?? $this->messages;
-        $treatedmessage = $msgs->addMessage("user", $message);
-        $this->saver->saveMessage("user", $message, $treatedmessage['tokencount']);
+        $usermessage = $msgs->addNewMessage("user", $message);
+        $this->saver->saveMessage($usermessage);
         $resp = $this->comms->sendQuery($msgs);
-        $treatedmessage = $msgs->addMessage("assistant", $resp);
-        $this->saver->saveMessage("assistant", $resp, $treatedmessage['tokencount']);
+        $asstmessage = $msgs->addNewMessage("assistant", $resp);
+        $this->saver->saveMessage($asstmessage);
         $this->saver->setConfVal("lastmessage", (new \DateTime("now"))->format("c"));
         return $resp;
     }
@@ -102,13 +96,15 @@ class Runner
         }
         $prompt = "Please summarise this message in 300 characters or fewer: ";
         foreach ($dbmsgs as $dbmsg) {
-            if (strlen($dbmsg['text']) <= 300) {
-                $summary = $dbmsg['text'];
+            if (strlen($dbmsg->getContent()) <= 300) {
+                $summary = $dbmsg->getContent();
             } else {
-                $this->ctl->addMessage("user", $prompt . $dbmsg['text']);
+                $this->ctl->addNewMessage("user", $prompt . $dbmsg->getContent());
                 $summary = $this->ctlcomms->sendQuery($this->ctl);
             }
-            $this->saver->updateMessage($dbmsg['id'], $dbmsg['role'], $dbmsg['text'], $dbmsg['tokencount'], $summary, Comms::countTokens($summary));
+            $dbmsg->setSummary($summary);
+            $this->saver->saveMessage($dbmsg);
+            //$this->saver->updateMessage($dbmsg['id'], $dbmsg['role'], $dbmsg['text'], $dbmsg['tokencount'], $summary, Comms::countTokens($summary));
         }
     }
 /* /listing 01.14 */

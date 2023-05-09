@@ -10,42 +10,21 @@ class Messages
 /* /listing 01.10 */
     private array $messages = [];
     private string $premise = "You are an interested, inquisitive and helpful assistant";
-    private int $trunc = 1000;
-
-    // will only act on newly added messages without an existing summary
-    public function setTrunc(int $trunc)
-    {
-        $this->trunc = $trunc;
-    }
-
-    private function makeSummary(string $content, string $summary): string
-    {
-        return (empty($summary)) ? substr($content, 0, $this->trunc) : $summary;
-    }
-
-    private function getContentSize(string $content, int $tokencount): int
-    {
-        return ($tokencount > 0) ? $tokencount :  Comms::countTokens($content);
-    }
 
 /* listing 01.10 */
-    private function makeMessage(string $role, string $message, int $tokencount = 0, string $summary = "", int $summarytokencount = 0): array
+    private function makeMessage(string $role, string $content): Message
     {
-        $msg = [
-            "role" => $role,
-            "content" => trim($message),
-            "tokencount" => $this->getContentSize($message, $tokencount),
-            "summary" => $this->makeSummary($message, $summary),
-        ];
-        $msg["summarytokencount"]  = $this->getContentSize($msg['summary'], $summarytokencount);
-        return $msg;
+        $message = new Message(-1, $role, $content);
+        return $message;
     }
-
-    public function addMessage(string $role, string $message, int $tokencount = 0, string $summary = "", int $summarytokencount = 0): array
+    public function addNewMessage($role, $content): Message
     {
-        $msg = $this->makeMessage($role, $message, $tokencount, $summary, $summarytokencount);
-        $this->messages[] = $msg;
-        return $msg;
+        return $this->addMessage($this->makeMessage($role, $content));
+    }
+    public function addMessage(Message $message): Message
+    {
+        $this->messages[] = $message;
+        return $message;
     }
 /* /listing 01.10 */
 
@@ -91,12 +70,12 @@ class Messages
         // ...
 /* /listing 01.15 */
         return array_map(function ($val) {
-            return ["role" => $val['role'], "content" => $val['content']];
+            return $val->getOutputArray();
         }, $messages);
 /* listing 01.15 */
     }
 /* /listing 01.11 */
-
+    
     private function compress(array $premise, array $context, int $available)
     {
         $threshold = ($available * 0.75);
@@ -115,15 +94,15 @@ class Messages
         // reverse because we want to privilege recent messages
         $context = array_reverse($context);
         foreach ($context as $message) {
-            $newsize = ($size + $message['tokencount']);
+            $newsize = ($size + $message->getTokenCount());
             if ($newsize > $available || $size > $threshold) {
-                $newsize = ($size + $message['summarytokencount']);
+                $newsize = ($size + $message->getContextSummaryTokenCount());
                 // if still too big we're done
                 if ($newsize > $available) {
                     return array_merge($premise, $ret, [ $last ]);
                 }
                 // short version fits but we're on short rations now
-                $message['content'] = $message['summary'];
+                $message->setFullContentMode(false);
             }
             // add to the beginning of $ret
             array_unshift($ret, $message);
@@ -136,13 +115,13 @@ class Messages
     }
 /* /listing 01.15 */
 
-    private function checkRequiredMessages(array &$premise, array &$last, int $available)
+    private function checkRequiredMessages(array &$premise, Message $last, int $available)
     {
         $size = 0;
         foreach ($premise as $msg) {
-            $size += $msg['tokencount'];
+            $size += $msg->getTokenCount();
         }
-        $size += $last['tokencount'];
+        $size += $last->getTokenCount();
         // premise and the last message are non-negotiable
         if ($size > $available) {
             throw new \Exception("The message exceeds the available space ({$available}) - size: $size");
