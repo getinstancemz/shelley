@@ -55,7 +55,6 @@ class Comms
         return $response;
     }
 
-/* listing 01.12 */
     public function sendQueryChat(Messages $messages): string
     {
         $open_ai = new OpenAi($this->secretKey);
@@ -78,5 +77,4 @@ class Comms
         $response = $ret['choices'][0]['message']['content'];
         return $response;
     }
-/* /listing 01.12 */
 }

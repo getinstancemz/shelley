@@ -11,17 +11,12 @@ use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
 use getinstance\utils\aichat\ai\Messages;
 
-/* listing 01.06 */
 class ProcessUI
 {
-/* /listing 01.06 */
     private array $commands = [];
     private ConvoSaver $saver;
-/* listing 01.06 */
-/* listing 01.17 */
     public function __construct(private Runner $runner)
     {
-/* /listing 01.06 */
         $this->saver = $runner->getSaver();
         $this->commands = [
             new RedoCommand($runner),
@@ -31,11 +26,8 @@ class ProcessUI
             new PremiseCommand($runner),
             // Add other command classes here
         ];
-/* listing 01.06 */
     }
-/* /listing 01.17 */
 
-/* /listing 01.06 */
     public function initSummarise(Messages $msgs)
     {
         // summarise current state of conversation
@@ -65,25 +57,13 @@ class ProcessUI
             print "\n";
         }
     }
-/* listing 01.06 */
-
-/* listing 01.13 */
     public function run()
     {
-/* /listing 01.06 */
-
-    // ...
-/* listing 01.06 */
-/* /listing 01.13 */
         $msgs = $this->runner->getMessages();
-/* /listing 01.06 */
         $this->initSummarise($msgs);
-/* listing 01.06 */
 
-/* listing 01.13 */
         $input = "";
         while (($input = $this->process("USER      > ")) != "q\n") {
-/* /listing 01.13 */
             try {
                 print "# sending\n";
                 $resp = $this->runner->query($input);
@@ -92,28 +72,18 @@ class ProcessUI
                 $resp .= $e->getMessage();
             }
             print "ASSISTANT > {$resp} \n";
-/* listing 01.13 */
-/* /listing 01.06 */
-            // ...
 
             print "# summarising...";
             $this->runner->summariseMostRecent();
             print " done\n";
-/* listing 01.06 */
         }
     }
-/* /listing 01.06 */
-/* /listing 01.13 */
 
-/* listing 01.07 */
-/* listing 01.16 */
     private function process($prompt)
     {
         $buffer = "";
         while ($input = readline($prompt)) {
             $prompt = "";
-/* /listing 01.07 */
-/* /listing 01.16 */
             if ($this->hasContinuationEndChar($input, $buffer)) {
                 continue;
             }
@@ -122,8 +92,6 @@ class ProcessUI
                 return $final;
             }
 
-/* listing 01.07 */
-/* listing 01.16 */
             if (! $this->invokeCommand($input, $buffer)) {
                 $buffer .= $input;
                 break;
@@ -133,8 +101,6 @@ class ProcessUI
         return $buffer;
     }
 
-/* /listing 01.16 */
-/* /listing 01.07 */
     private function hasContinuationEndChar(string $input, &$buffer)
     {
         // allow end of line continuation with \ or  /
@@ -152,7 +118,7 @@ class ProcessUI
         $input = "";
         while (true) {
             $input = readline();
-            if ($this->isCommand($input, $buffer)) {
+            if ($this->invokeCommand($input, $buffer)) {
                 continue;
             }
             if ((new ArbitraryCommand($this->runner, "e"))->matches($input)) {
@@ -163,19 +129,14 @@ class ProcessUI
         }
     }
 
-/* listing 01.07 */
-/* listing 01.16 */
     private function invokeCommand(string $input, string &$buffer)
     {
-/* /listing 01.07 */
         foreach ($this->commands as $command) {
             if ($command->matches($input)) {
                 $command->execute($buffer, $command->getLastMatchArgs());
                 return true;
             }
         }
-/* listing 01.07 */
         return false;
     }
-/* /listing 01.16 */
 }

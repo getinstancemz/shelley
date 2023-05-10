@@ -6,11 +6,9 @@ use getinstance\utils\aichat\control\Runner;
 use getinstance\utils\aichat\ai\Comms;
 use getinstance\utils\aichat\ai\Messages;
 
-/* listing 01.19 */
 abstract class AbstractCommand implements CommandInterface
 {
     private array $args = [];
-/* /listing 01.19 */
     protected Runner $runner;
 
     public function __construct(Runner $runner)
@@ -28,7 +26,6 @@ abstract class AbstractCommand implements CommandInterface
         return $this->args;
     }
 
-/* listing 01.19 */
     public function matches(string $input): bool
     {
         $ret = (bool)preg_match($this->getPattern(), $input, $matches);

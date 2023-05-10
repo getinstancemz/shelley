@@ -2,16 +2,19 @@
 
 namespace getinstance\utils\aichat\ai;
 
-/* listing 01.10 */
 class Messages
 {
-    // ...
 
-/* /listing 01.10 */
     private array $messages = [];
     private string $premise = "You are an interested, inquisitive and helpful assistant";
 
-/* listing 01.10 */
+    public function __construct(?string $premise=null)
+    {
+        if (! is_null($premise)) {
+            $this->premise = $premise;
+        }
+    }
+
     private function makeMessage(string $role, string $content): Message
     {
         $message = new Message(-1, $role, $content);
@@ -26,7 +29,6 @@ class Messages
         $this->messages[] = $message;
         return $message;
     }
-/* /listing 01.10 */
 
     public function getPremise()
     {
@@ -42,15 +44,8 @@ class Messages
     {
         $this->messages = [];
     }
-/* listing 01.15 */
-/* listing 01.11 */
     public function toArray($maxrows = 0, $maxtokens = 0)
     {
-/* /listing 01.11 */
-        // ...
-
-/* listing 01.11 */
-/* /listing 01.15 */
         $desc = [
             $this->makeMessage("system", $this->premise),
             $this->makeMessage("user", $this->premise . " Do you understand this instruction?"),
@@ -60,21 +55,15 @@ class Messages
         if ($maxrows > 0) {
             $messages = array_slice($this->messages, ($maxrows * -1));
         }
-/* listing 01.15 */
-/* /listing 01.11 */
         if ($maxtokens > 0) {
             $messages = $this->compress($desc, $messages, $maxtokens);
         }
-/* listing 01.11 */
 
         // ...
-/* /listing 01.15 */
         return array_map(function ($val) {
             return $val->getOutputArray();
         }, $messages);
-/* listing 01.15 */
     }
-/* /listing 01.11 */
     
     private function compress(array $premise, array $context, int $available)
     {
@@ -86,7 +75,6 @@ class Messages
         // if we reach a threshold (75%) or run out of space
         // then switch to the summary version
 
-/* /listing 01.15 */
 
         $available = $this->checkRequiredMessages($premise, $last, $available);
         // we have a new availability and we reset size
@@ -110,10 +98,8 @@ class Messages
         }
 
         // return the lot
-/* listing 01.15 */
         return array_merge($premise, $ret, [ $last ]);
     }
-/* /listing 01.15 */
 
     private function checkRequiredMessages(array &$premise, Message $last, int $available)
     {
@@ -140,5 +126,4 @@ class Messages
         $query .= "assistant: \n";
         return $query;
     }
-/* listing 01.11 */
 }
