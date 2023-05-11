@@ -16,7 +16,7 @@ $ php scripts/shelley.php
 
 If you don't want to rely on an environment variable you can also edit copy the `conf/chat.json.sample` file to `conf/chat.json` and then edit the relevant field.
 
-To start a named converation rather than the default conversation:
+To start a named conversation rather than the default conversation:
 
 ```
 $ php scripts/shelley.php my-conversation-name
