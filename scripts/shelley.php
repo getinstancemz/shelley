@@ -29,7 +29,20 @@ function errorUsage(string $msg): void
 // Set up the SQLite database connection
 $convo = $argv[1] ?? "default";
 $conffile = __DIR__ . "/../conf/chat.json";
-$conf = json_decode(file_get_contents($conffile));
+
+if (file_exists($conffile)) {
+    $conf = json_decode(file_get_contents($conffile));
+} else {
+    $conf = new stdClass();
+    $conf->openai = new stdClass();
+}
+
+$conf->openai->token ??= getenv('OPENAI_API_KEY');
+
+if (empty($conf->openai->token)) {
+    errorUsage("could not find OpenAI token");
+}
+
 $conf->datadir ??= __DIR__ . "/../data";
 
 $saver = new ConvoSaver($conf->datadir, $convo);
