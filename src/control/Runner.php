@@ -16,16 +16,25 @@ class Runner
     public function __construct(private object $conf, private ConvoSaver $saver)
     {
         $this->comms = new Comms(new GPT35(), $this->conf->openai->token);
-        $convoconf = $saver->getConf();
-        $premise = $convoconf["premise"] ?? null;
-        $this->messages = new Messages($premise);
         $this->initMessages();
         $this->ctl = new Messages("You are an LLM client management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicate well");
         $this->ctlcomms = new Comms(new GPT35(), $this->conf->openai->token);
     }
 
+    public function switchConvo(string $name)
+    {
+        if (! $this->saver->hasConvo($name)) {
+            throw new \Exception("No conversation: $name");
+        }
+        $this->saver->useConvo($name);
+        $this->initMessages();
+    }
+
     private function initMessages(): void
     {
+        $convoconf = $this->saver->getConf();
+        $premise = $convoconf["premise"] ?? null;
+        $this->messages = new Messages($premise);
         $dbmsgs = $this->saver->getMessages(100);
         foreach ($dbmsgs as $msg) {
             $this->messages->addMessage($msg);

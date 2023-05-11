@@ -10,6 +10,7 @@ use getinstance\utils\aichat\uicommand\FileCommand;
 use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
 use getinstance\utils\aichat\uicommand\ChatsCommand;
+use getinstance\utils\aichat\uicommand\UseCommand;
 use getinstance\utils\aichat\ai\Messages;
 
 class ProcessUI
@@ -20,19 +21,21 @@ class ProcessUI
     {
         $this->saver = $runner->getSaver();
         $this->commands = [
-            new RedoCommand($runner),
-            new DisplayBufferCommand($runner),
-            new FileCommand($runner),
-            new ContextCommand($runner),
-            new PremiseCommand($runner),
-            new ChatsCommand($runner),
+            new RedoCommand($this, $runner),
+            new DisplayBufferCommand($this, $runner),
+            new FileCommand($this, $runner),
+            new ContextCommand($this, $runner),
+            new PremiseCommand($this, $runner),
+            new ChatsCommand($this, $runner),
+            new UseCommand($this, $runner),
             // Add other command classes here
         ];
     }
 
-    public function initSummarise(Messages $msgs)
+    public function initSummarise()
     {
         // summarise current state of conversation
+        $msgs = $this->runner->getMessages();
         $conversation = $this->saver->getConvo();
         $conf = $this->saver->getConf();
 
@@ -40,7 +43,9 @@ class ProcessUI
         if (isset($conf['lastmessage'])) {
             print "# last conversation {$conf['lastmessage']}\n";
         }
-        print "\n";
+        print "#\n";
+        print "# premise: ".$this->runner->getPremise()."\n";
+        print "#\n";
         $context = $msgs->toArray(5);
         $indent = str_pad("", 13);
 
@@ -59,10 +64,10 @@ class ProcessUI
             print "\n";
         }
     }
+
     public function run()
     {
-        $msgs = $this->runner->getMessages();
-        $this->initSummarise($msgs);
+        $this->initSummarise();
 
         $input = "";
         while (($input = $this->process("USER      > ")) != "q\n") {
@@ -84,20 +89,29 @@ class ProcessUI
     private function process($prompt)
     {
         $buffer = "";
+        $origprompt = $prompt;
         while ($input = readline($prompt)) {
             $prompt = "";
             if ($this->hasContinuationEndChar($input, $buffer)) {
+                print "tarse";
                 continue;
             }
-            if ((new ArbitraryCommand($this->runner, "m"))->matches($input)) {
+            if ((new ArbitraryCommand($this, $this->runner, "m"))->matches($input)) {
                 $final = $this->processMulti($buffer);
                 return $final;
             }
 
+            
             if (! $this->invokeCommand($input, $buffer)) {
                 $buffer .= $input;
+                
                 break;
             }
+
+        }
+
+        if (preg_match("/^\s*+$/", $buffer)) {
+            $this->process($origprompt);
         }
 
         return $buffer;
