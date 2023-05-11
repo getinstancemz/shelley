@@ -197,7 +197,7 @@ class ConvoSaver
                 $dbmsg['role'],
                 $dbmsg['text'],
                 (int)$dbmsg['tokencount'],
-                $dbmsg['summary'],
+                (string)$dbmsg['summary'],
                 $dbmsg['summarytokencount']
             );
         }
