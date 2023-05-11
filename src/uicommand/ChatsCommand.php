@@ -10,8 +10,9 @@ class ChatsCommand extends AbstractCommand
         $convos = $saver->getConvos();
         print "# Chats (recently created first)\n";
         foreach ($convos as $convo) {
-            print "#   {$convo['name']}\n\n";
+            print "#   {$convo['name']}\n";
         }
+        print "#\n";
     }
 
     public function getName(): string

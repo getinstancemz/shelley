@@ -3,6 +3,7 @@
 namespace getinstance\utils\aichat\uicommand;
 
 use getinstance\utils\aichat\control\Runner;
+use getinstance\utils\aichat\control\ProcessUI;
 use getinstance\utils\aichat\ai\Comms;
 use getinstance\utils\aichat\ai\Messages;
 
@@ -10,9 +11,11 @@ abstract class AbstractCommand implements CommandInterface
 {
     private array $args = [];
     protected Runner $runner;
+    protected ProcessUI $ui;
 
-    public function __construct(Runner $runner)
+    public function __construct(ProcessUI $ui, Runner $runner)
     {
+        $this->ui = $ui;
         $this->runner = $runner;
     }
 

@@ -25,6 +25,14 @@ class ConvoSaver
         $this->useConvo($convoname);
     }
 
+    public function hasConvo(string $name): bool
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM conversation WHERE name = :name");
+        $stmt->execute([':name' => $name]);
+        $convos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return (count($convos)) ? true:false;
+    }
+
     public function getConvo(): array
     {
         $stmt = $this->pdo->prepare("SELECT * FROM conversation WHERE id = :id");
