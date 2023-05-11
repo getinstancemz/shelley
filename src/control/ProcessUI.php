@@ -9,6 +9,7 @@ use getinstance\utils\aichat\uicommand\DisplayBufferCommand;
 use getinstance\utils\aichat\uicommand\FileCommand;
 use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
+use getinstance\utils\aichat\uicommand\ChatsCommand;
 use getinstance\utils\aichat\ai\Messages;
 
 class ProcessUI
@@ -24,6 +25,7 @@ class ProcessUI
             new FileCommand($runner),
             new ContextCommand($runner),
             new PremiseCommand($runner),
+            new ChatsCommand($runner),
             // Add other command classes here
         ];
     }

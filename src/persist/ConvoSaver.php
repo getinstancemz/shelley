@@ -38,6 +38,14 @@ class ConvoSaver
         return $convo;
     }
 
+    public function getConvos(): array
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM conversation ORDER BY id DESC");
+        $stmt->execute();
+        $convos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $convos;
+    }
+
     public function createOrAccessDb(): void
     {
         // Create tables if they don't exist
