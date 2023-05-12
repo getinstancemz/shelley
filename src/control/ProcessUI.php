@@ -11,6 +11,7 @@ use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
 use getinstance\utils\aichat\uicommand\ChatsCommand;
 use getinstance\utils\aichat\uicommand\UseCommand;
+use getinstance\utils\aichat\uicommand\NotFoundCommand;
 use getinstance\utils\aichat\ai\Messages;
 
 class ProcessUI
@@ -30,6 +31,7 @@ class ProcessUI
             new UseCommand($this, $runner),
             // Add other command classes here
         ];
+        $this->notfoundcommand = new NotFoundCommand($this, $runner);
     }
 
     public function initSummarise()
@@ -111,9 +113,8 @@ class ProcessUI
         }
 
         if (preg_match("/^\s*+$/", $buffer)) {
-            $this->process($origprompt);
+            return $this->process($origprompt);
         }
-
         return $buffer;
     }
 
@@ -147,7 +148,9 @@ class ProcessUI
 
     private function invokeCommand(string $input, string &$buffer)
     {
-        foreach ($this->commands as $command) {
+        $commands = $this->commands;
+        $commands[] = $this->notfoundcommand;
+        foreach ($commands as $command) {
             if ($command->matches($input)) {
                 $command->execute($buffer, $command->getLastMatchArgs());
                 return true;
