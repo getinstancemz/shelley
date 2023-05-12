@@ -30,6 +30,7 @@ If you need to get to a new line without submitting can just add the continuatio
 | Command | Description |
 |---------|-------------|
 | /help    | Describe UI commands |
+| /edit    | Edit the buffer in an external editor (whatever you have in $EDITOR or it will default to vi) |
 | /redo    | Wipes the buffer |
 | /buf     | Outputs the contents of the current buffer (the text you're about to send) |
 | /file    | &lt;path&gt; - Will include the contents of the given path in your buffer |
