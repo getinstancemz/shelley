@@ -137,7 +137,7 @@ class ProcessUI
             if ($this->invokeCommand($input, $buffer)) {
                 continue;
             }
-            if ((new ArbitraryCommand($this->runner, "e"))->matches($input)) {
+            if ((new ArbitraryCommand($this, $this->runner, "e"))->matches($input)) {
                 print "# sending\n";
                 return $buffer;
             }
