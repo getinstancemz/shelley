@@ -1,5 +1,5 @@
 # Shelley
-A PHP OpenAI client designed to be run from the command line
+A PHP OpenAI chat client designed to be run from the command line
 
 ## Requirements
 * PHP 8.1 or greater
