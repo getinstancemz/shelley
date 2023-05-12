@@ -134,12 +134,12 @@ class ProcessUI
         $input = "";
         while (true) {
             $input = readline();
-            if ($this->invokeCommand($input, $buffer)) {
-                continue;
-            }
             if ((new ArbitraryCommand($this, $this->runner, "e"))->matches($input)) {
                 print "# sending\n";
                 return $buffer;
+            }
+            if ($this->invokeCommand($input, $buffer)) {
+                continue;
             }
             $buffer .= $input . "\n";
         }
