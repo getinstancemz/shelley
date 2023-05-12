@@ -5,5 +5,6 @@ interface CommandInterface
 {
     public function execute(string &$buffer, array $args): void;
     public function getName(): string;
+    public function getDescription(): string;
     public function matches(string $input): bool;
 }

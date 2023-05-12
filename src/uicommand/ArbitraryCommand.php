@@ -22,4 +22,9 @@ class ArbitraryCommand extends AbstractCommand
     {
         return $this->name;
     }
+
+    public function getDescription(): string
+    {
+        return "An empty command that can be overridden";
+    }
 }

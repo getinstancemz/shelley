@@ -29,4 +29,8 @@ class NotFoundCommand extends AbstractCommand
         return "&^{$trig}(?:\S+)\s*(.*)\s*$&";
     }
 
+    public function getDescription(): string
+    {
+        return "Error backstop";
+    }
 }

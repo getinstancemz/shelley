@@ -14,4 +14,9 @@ class RedoCommand extends AbstractCommand
     {
         return 'redo';
     }
+
+    public function getDescription(): string
+    {
+        return "Wipes the buffer";
+    }
 }

@@ -23,4 +23,9 @@ class PremiseCommand extends AbstractCommand
     {
         return 'premise';
     }
+
+    public function getDescription(): string
+    {
+        return "[text] - Sets assistant premise for the conversation if [text] provided. Shows the premise otherwise";
+    }
 }

@@ -19,4 +19,9 @@ class ChatsCommand extends AbstractCommand
     {
         return "chats";
     }
+
+    public function getDescription(): string
+    {
+        return "Lists all conversations in reverse order of creation";
+    }
 }

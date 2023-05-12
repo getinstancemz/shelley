@@ -16,4 +16,9 @@ class DisplayBufferCommand extends AbstractCommand
     {
         return 'buf';
     }
+
+    public function getDescription(): string
+    {
+        return "Outputs the contents of the current buffer (the text you're about to send)";
+    }
 }

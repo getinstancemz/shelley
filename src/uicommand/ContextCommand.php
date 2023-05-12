@@ -23,4 +23,10 @@ class ContextCommand extends AbstractCommand
     {
         return 'context';
     }
+
+    public function getDescription(): string
+    {
+        return "Prints the full context for the current conversation (warning: will spam your buffer)";
+    }
+
 }

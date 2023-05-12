@@ -19,4 +19,9 @@ class UseCommand extends AbstractCommand
     {
         return "use";
     }
+
+    public function getDescription(): string
+    {
+        return "<name> - Switches conversation to <name>";
+    }
 }

@@ -4,6 +4,8 @@ namespace getinstance\utils\aichat\control;
 
 use getinstance\utils\aichat\persist\ConvoSaver;
 use getinstance\utils\aichat\uicommand\ArbitraryCommand;
+use getinstance\utils\aichat\uicommand\EditCommand;
+use getinstance\utils\aichat\uicommand\HelpCommand;
 use getinstance\utils\aichat\uicommand\RedoCommand;
 use getinstance\utils\aichat\uicommand\DisplayBufferCommand;
 use getinstance\utils\aichat\uicommand\FileCommand;
@@ -22,6 +24,8 @@ class ProcessUI
     {
         $this->saver = $runner->getSaver();
         $this->commands = [
+            new HelpCommand($this, $runner),
+            new EditCommand($this, $runner),
             new RedoCommand($this, $runner),
             new DisplayBufferCommand($this, $runner),
             new FileCommand($this, $runner),
@@ -32,6 +36,11 @@ class ProcessUI
             // Add other command classes here
         ];
         $this->notfoundcommand = new NotFoundCommand($this, $runner);
+    }
+
+    public function getCommands(): array
+    {
+        return $this->commands;
     }
 
     public function initSummarise()
