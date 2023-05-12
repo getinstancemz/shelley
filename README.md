@@ -25,7 +25,7 @@ $ php scripts/shelley.php my-conversation-name
 ## UI Commands
 Run commands on their own line.
 
-If you need to get to a new line without submitting can just add the continuation character (`/` or `\`) to the end of your current line and hit return
+If you need to get to a new line without submitting you can just add the continuation character (`/` or `\`) to the end of your current line and hit return
 
 | Command | Description |
 |---------|-------------|
