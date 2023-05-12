@@ -93,7 +93,6 @@ class ProcessUI
         while ($input = readline($prompt)) {
             $prompt = "";
             if ($this->hasContinuationEndChar($input, $buffer)) {
-                print "tarse";
                 continue;
             }
             if ((new ArbitraryCommand($this, $this->runner, "m"))->matches($input)) {
