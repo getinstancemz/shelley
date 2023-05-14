@@ -4,6 +4,7 @@ namespace getinstance\utils\aichat\control;
 
 use getinstance\utils\aichat\persist\ConvoSaver;
 use getinstance\utils\aichat\uicommand\ArbitraryCommand;
+use getinstance\utils\aichat\uicommand\DeleteConvoCommand;
 use getinstance\utils\aichat\uicommand\EditCommand;
 use getinstance\utils\aichat\uicommand\HelpCommand;
 use getinstance\utils\aichat\uicommand\RedoCommand;
@@ -33,6 +34,7 @@ class ProcessUI
             new PremiseCommand($this, $runner),
             new ChatsCommand($this, $runner),
             new UseCommand($this, $runner),
+            new DeleteConvoCommand($this, $runner),
             // Add other command classes here
         ];
         $this->notfoundcommand = new NotFoundCommand($this, $runner);
@@ -124,6 +126,14 @@ class ProcessUI
             return $this->process($origprompt);
         }
         return $buffer;
+    }
+
+    public function confirm(string $prompt): bool {
+        $input = readline("# {$prompt} [y/N]: ");
+        if (preg_match("/^[yY]/", $input)) {
+            return true;
+        }
+        return false;
     }
 
     private function hasContinuationEndChar(string $input, &$buffer)

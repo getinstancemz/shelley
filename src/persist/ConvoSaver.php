@@ -9,6 +9,7 @@ class ConvoSaver
 {
     private \PDO $pdo;
     private int $convo_id;
+    private string $convoname;
 
     public function __construct(private string $datadir, string $convoname)
     {
@@ -25,18 +26,35 @@ class ConvoSaver
         $this->useConvo($convoname);
     }
 
-    public function hasConvo(string $name): bool
+    public function hasConvo(string $name): bool|int
     {
         $stmt = $this->pdo->prepare("SELECT * FROM conversation WHERE name = :name");
         $stmt->execute([':name' => $name]);
         $convos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return (count($convos)) ? true:false;
+        return (count($convos)) ? $convos[0]['id']:false;
     }
 
-    public function getConvo(): array
+    public function deleteConvoAndMessages(string $name)
     {
+        if (! ($id = $this->hasConvo($name))) {
+            throw new \Exception("Unknown conversation '{$name}'");
+        }
+        $stmt = $this->pdo->prepare("DELETE FROM conversation WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+
+        $stmt = $this->pdo->prepare("DELETE FROM messages WHERE conversation_id = :id");
+        $stmt->execute([':id' => $id]);
+        
+        $stmt = $this->pdo->prepare("DELETE FROM convoconf WHERE conversation_id = :id");
+        $stmt->execute([':id' => $id]);
+
+    }
+
+    public function getConvo(?int $id=null): array
+    {
+        $id = (is_null($id))?$this->convo_id:$id;
         $stmt = $this->pdo->prepare("SELECT * FROM conversation WHERE id = :id");
-        $stmt->execute([':id' => $this->convo_id]);
+        $stmt->execute([':id' => $id]);
         $convo = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($convo === false) {
@@ -119,9 +137,8 @@ class ConvoSaver
         ]);
     }
 
-    public function useConvo(string $name): int
+    public function createConvo(string $name): int
     {
-        $this->convoname = $name;
         $this->createOrAccessDb();
         $stmt = $this->pdo->prepare("SELECT id FROM conversation WHERE name = :name");
         $stmt->execute([':name' => $name]);
@@ -132,6 +149,18 @@ class ConvoSaver
             $stmt->execute([':name' => $name]);
             $convo_id = $this->pdo->lastInsertId();
         }
+        return $convo_id;
+    }
+
+    public function getConvoname()
+    {
+        return $this->convoname;
+    }
+
+    public function useConvo(string $name): int
+    {
+        $convo_id = $this->createConvo($name); 
+        $this->convoname = $name;
         $this->convo_id = $convo_id;
         return $convo_id;
     }
