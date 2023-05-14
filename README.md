@@ -37,5 +37,6 @@ If you need to get to a new line without submitting can just add the continuatio
 | /premise | [text] - Sets assistant premise for the conversation if [text] provided. Shows the premise otherwise |
 | /chats   | Lists all conversations in reverse order of creation |
 | /use     | &lt;name&gt; - Switches conversation to the named chat |
+| /del     | &lt;name&gt; - Deletes the named chat (will recreate an empty `default` if named) |
 | /m       | Switch into multi-line mode. Sending /e will end the mode and submit |
 
