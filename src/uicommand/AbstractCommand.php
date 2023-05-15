@@ -40,6 +40,6 @@ abstract class AbstractCommand implements CommandInterface
     protected function getPattern(): string
     {
         $trig = "(?:/|\\\\)";
-        return "&^{$trig}(?:{$this->getName()})\s*(.*)\s*$&";
+        return "&^{$trig}(?:{$this->getName()})(?:\s+|$)(.*)\s*$&";
     }
 }

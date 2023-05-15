@@ -21,9 +21,14 @@ class Comms
         //return $this->sendQueryCompletion($messages);
     }
 
-    public function getModel()
+    public function getModel(): Model
     {
         return $this->model;
+    }
+
+    public function setModel(Model $model): void
+    {
+        $this->model = $model;
     }
 
     public static function countTokens(string $str): int
@@ -74,7 +79,7 @@ class Comms
         if (! isset($ret['choices'][0]['message']['content'])) {
             throw new \Exception("Unknown error: " . $completion);
         }
-        $response = $ret['choices'][0]['message']['content'];
+        $response = $this->model->getName().": ".$ret['choices'][0]['message']['content'];
         return $response;
     }
 }

@@ -3,6 +3,7 @@
 namespace getinstance\utils\aichat\control;
 
 use getinstance\utils\aichat\ai\Comms;
+use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\models\GPT4;
 use getinstance\utils\aichat\ai\models\GPT35;
 use getinstance\utils\aichat\ai\Messages;
@@ -15,7 +16,6 @@ class Runner
     private Comms $ctlcomms;
     public function __construct(private object $conf, private ConvoSaver $saver)
     {
-        $this->comms = new Comms(new GPT35(), $this->conf->openai->token);
         $this->initMessages();
         $this->ctl = new Messages("You are an LLM client management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicate well");
         $this->ctlcomms = new Comms(new GPT35(), $this->conf->openai->token);
@@ -30,9 +30,30 @@ class Runner
         $this->initMessages();
     }
 
+    public function getModel(): Model
+    {
+        return $this->comms->getModel();
+    }
+
+    public function setModel(Model $model): void
+    {
+        $this->comms->setModel($model);
+    }
+
     private function initMessages(): void
     {
         $convoconf = $this->saver->getConf();
+        $premise = $convoconf["premise"] ?? null;
+        $models = [
+            "gpt-3.5-turbo" => new GPT35(),
+            "gpt-4" => new GPT4()
+        ];
+        if (isset($convoconf['model']) && isset($models[$convoconf['model']])) {
+            $model = $models[$convoconf['model']];
+        } else {
+            $model = new GPT35();
+        }
+        $this->comms = new Comms($model, $this->conf->openai->token);
         $premise = $convoconf["premise"] ?? null;
         $this->messages = new Messages($premise);
         $dbmsgs = $this->saver->getMessages(100);

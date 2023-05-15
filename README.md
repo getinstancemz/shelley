@@ -38,5 +38,6 @@ If you need to get to a new line without submitting can just add the continuatio
 | /chats   | Lists all conversations in reverse order of creation |
 | /use     | &lt;name&gt; - Switches conversation to the named chat |
 | /del     | &lt;name&gt; - Deletes the named chat (will recreate an empty `default` if named) |
+| /model   | Sets the model for the conversation (the interface will provide a pick list)  |
 | /m       | Switch into multi-line mode. Sending /e will end the mode and submit |
 

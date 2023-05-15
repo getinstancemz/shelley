@@ -14,6 +14,7 @@ use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
 use getinstance\utils\aichat\uicommand\ChatsCommand;
 use getinstance\utils\aichat\uicommand\UseCommand;
+use getinstance\utils\aichat\uicommand\ModelCommand;
 use getinstance\utils\aichat\uicommand\NotFoundCommand;
 use getinstance\utils\aichat\ai\Messages;
 
@@ -35,6 +36,7 @@ class ProcessUI
             new ChatsCommand($this, $runner),
             new UseCommand($this, $runner),
             new DeleteConvoCommand($this, $runner),
+            new ModelCommand($this, $runner),
             // Add other command classes here
         ];
         $this->notfoundcommand = new NotFoundCommand($this, $runner);
@@ -56,8 +58,8 @@ class ProcessUI
         if (isset($conf['lastmessage'])) {
             print "# last conversation {$conf['lastmessage']}\n";
         }
-        print "#\n";
         print "# premise: ".$this->runner->getPremise()."\n";
+        print "# model:   ".$this->runner->getModel()->getName()."\n";
         print "#\n";
         $context = $msgs->toArray(5);
         $indent = str_pad("", 13);
@@ -126,6 +128,23 @@ class ProcessUI
             return $this->process($origprompt);
         }
         return $buffer;
+    }
+
+    public function picklist(string $prompt, array $options): array {
+        $actual = [];
+
+        $count = 1;
+        foreach ($options as $key => $option) {
+            $actual[$count] = [$key, $option];
+            print "#    [$count] $option\n";
+            $count++;
+        }
+        while ($input = readline("# {$prompt}: ")) {
+            $imput = trim($input);
+            if (isset($actual[$input])) {
+                return [$actual[$input][0], $actual[$input][1]];
+            }
+        }
     }
 
     public function confirm(string $prompt): bool {
