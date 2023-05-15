@@ -25,6 +25,11 @@ class EditCommand extends AbstractCommand
             $buffer = file_get_contents($tmpfile);
             unlink($tmpfile);
         }
+        $output = $buffer;
+        $output = preg_replace("/^/m", "# ", $output);  
+        print "# new buffer:\n";
+        print "#\n";
+        print $output . "\n";
     }
 
     public function getName(): string
