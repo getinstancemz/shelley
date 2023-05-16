@@ -21,9 +21,14 @@ class Comms
         //return $this->sendQueryCompletion($messages);
     }
 
-    public function getModel()
+    public function getModel(): Model
     {
         return $this->model;
+    }
+
+    public function setModel(Model $model): void
+    {
+        $this->model = $model;
     }
 
     public static function countTokens(string $str): int
