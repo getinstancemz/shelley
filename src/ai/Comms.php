@@ -79,7 +79,7 @@ class Comms
         if (! isset($ret['choices'][0]['message']['content'])) {
             throw new \Exception("Unknown error: " . $completion);
         }
-        $response = $this->model->getName().": ".$ret['choices'][0]['message']['content'];
+        $response = $ret['choices'][0]['message']['content'];
         return $response;
     }
 }
