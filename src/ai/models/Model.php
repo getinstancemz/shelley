@@ -14,7 +14,7 @@ abstract class Model
      */
     public function getMaxResponse(): int
     {
-        return ($this->getMaxTokens() * 0.2);
+        return (int)($this->getMaxTokens() * 0.2);
     }
 
     /**
@@ -25,6 +25,6 @@ abstract class Model
     public function getMaxContext(): int
     {
         $contextmax = ($this->getMaxTokens() - $this->getMaxResponse());
-        return ($contextmax - ($contextmax * 0.05));
+        return (int)($contextmax - ($contextmax * 0.05));
     }
 }
