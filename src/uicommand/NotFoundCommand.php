@@ -18,7 +18,7 @@ class NotFoundCommand extends AbstractCommand
     {
         $ret = (bool)preg_match($this->getPattern(), $input, $matches);
         array_shift($matches);
-        $this->args = [];
+        //$this->args = [];
         return $ret;
     }
 

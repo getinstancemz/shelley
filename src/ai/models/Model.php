@@ -12,7 +12,7 @@ abstract class Model
      * The amount to allow for a response
      * (20% of maximum allowed for model)
      */
-    public function getMaxResponse(): int
+    public function getMaxResponse(): float
     {
         return (int)($this->getMaxTokens() * 0.2);
     }
@@ -22,7 +22,7 @@ abstract class Model
      * What is left over from the total token, less the response allowance
      * with a 5% margin
      */
-    public function getMaxContext(): int
+    public function getMaxContext(): float
     {
         $contextmax = ($this->getMaxTokens() - $this->getMaxResponse());
         return (int)($contextmax - ($contextmax * 0.05));

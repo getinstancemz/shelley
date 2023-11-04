@@ -14,6 +14,8 @@ class Runner
     private Messages $messages;
     private Messages $ctl;
     private Comms $ctlcomms;
+    private Comms $comms;
+
     public function __construct(private object $conf, private ConvoSaver $saver)
     {
         $this->initMessages();
