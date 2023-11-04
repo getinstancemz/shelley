@@ -22,6 +22,8 @@ class ProcessUI
 {
     private array $commands = [];
     private ConvoSaver $saver;
+    private NotFoundCommand $notfoundcommand;
+
     public function __construct(private Runner $runner)
     {
         $this->saver = $runner->getSaver();
@@ -92,6 +94,10 @@ class ProcessUI
             } catch (\Exception $e) {
                 $resp = "** I'm sorry, I encountered an error:\n";
                 $resp .= $e->getMessage();
+                $resp .= "\n";
+                $resp .= $e->getFile() . " :: " . $e->getLine();
+                $resp .= "\n";
+                $resp .= $e->getTraceAsString();
             }
             print "ASSISTANT > {$resp} \n";
 

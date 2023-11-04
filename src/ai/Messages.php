@@ -65,7 +65,7 @@ class Messages
         }, $messages);
     }
     
-    private function compress(array $premise, array $context, int $available)
+    private function compress(array $premise, array $context, float $available)
     {
         $threshold = ($available * 0.75);
         $last = array_pop($context);
@@ -101,7 +101,7 @@ class Messages
         return array_merge($premise, $ret, [ $last ]);
     }
 
-    private function checkRequiredMessages(array &$premise, Message $last, int $available)
+    private function checkRequiredMessages(array &$premise, Message $last, float $available)
     {
         $size = 0;
         foreach ($premise as $msg) {

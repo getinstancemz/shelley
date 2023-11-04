@@ -63,11 +63,12 @@ class Comms
     public function sendQueryChat(Messages $messages): string
     {
         $open_ai = new OpenAi($this->secretKey);
+        
         $completion = $open_ai->chat([
             'model' => $this->model->getName(),
             'messages' => $messages->toArray(100, $this->model->getMaxContext()),
             'temperature' => 0.5,
-            'max_tokens' => $this->model->getMaxResponse(),
+            'max_tokens' => (int)$this->model->getMaxResponse(),
             'frequency_penalty' => 0,
             'presence_penalty' => 0.6,
         ]);
