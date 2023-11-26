@@ -6,12 +6,12 @@ class ContextCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
     {
-        $model = $this->runner->getComms()->getModel();
+        $model = $this->runner->getModel();
         $indent = str_pad("", 13);
         $buffer = "";
-        $messages = $this->getMessages();
+        $messhistory = $this->runner->getMessageHistory(20, $model->getMaxContext());
         print "# Here is the current context:\n";
-        foreach ($messages->toArray(20, $model->getMaxContext()) as $row) {
+        foreach ($messhistory as $row) {
             $content = $row['content'];
             $role = str_pad(strtoupper($row['role']), 10);
             print "{$role}> $content\n";

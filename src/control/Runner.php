@@ -2,25 +2,71 @@
 
 namespace getinstance\utils\aichat\control;
 
-use getinstance\utils\aichat\ai\Comms;
-use getinstance\utils\aichat\ai\models\Model;
+use getinstance\utils\aichat\ai\models\GPT4_1106_Preview;
+use getinstance\utils\aichat\ai\models\GPT4_32k;
 use getinstance\utils\aichat\ai\models\GPT4;
 use getinstance\utils\aichat\ai\models\GPT35;
+
+
+use getinstance\utils\aichat\ai\Comms;
+use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
 use getinstance\utils\aichat\persist\ConvoSaver;
 
+use getinstance\utils\aichat\control\ProcessUI;
+
 class Runner
 {
-    private Messages $messages;
-    private Messages $ctl;
-    private Comms $ctlcomms;
-    private Comms $comms;
+    private ProcessUI $ui;
+    private ModeRunner $moderunner;
 
     public function __construct(private object $conf, private ConvoSaver $saver)
     {
-        $this->initMessages();
-        $this->ctl = new Messages("You are an LLM client management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicate well");
-        $this->ctlcomms = new Comms(new GPT35(), $this->conf->openai->token);
+        $this->ui = new ProcessUI($this);
+        $this->moderunner = $this->getModeRunner();
+    }
+
+    // managed here //////////////////////////////////////////////////////////////////
+    
+    public function getMode()
+    {
+        $convoconf = $this->saver->getConf();
+        $mode = $convoconf["mode"] ?? "chat";
+        return $mode;
+    }
+
+    public function getModeRunner()
+    {
+        if ($this->getMode() == "chat") {
+            return new ChatModeRunner($this, $this->ui, $this->conf, $this->saver);
+        } else if($this->getMode() == "assistant") {
+            return new AssistantModeRunner($this, $this->ui, $this->conf, $this->saver);
+        }
+        throw new \Exception("unknown mode: ".$this->getMode());
+    }
+
+    public function switchToAssistant()
+    {
+        $this->saver->setConfVal("mode", "assistant");
+        $this->moderunner = new AssistantModeRunner($this, $this->ui, $this->conf, $this->saver);
+    }
+
+    public function switchToChat()
+    {
+        $this->saver->setConfVal("mode", "chat");
+        $this->moderunner = new ChatModeRunner($this, $this->ui, $this->conf, $this->saver);
+    }
+
+
+    public function run(): void
+    {
+        $this->ui->run();
+    }
+
+    public function getConf()
+    {
+        $conf = $this->saver->getConf();
+        return $conf;
     }
 
     public function switchConvo(string $name)
@@ -32,36 +78,31 @@ class Runner
         $this->initMessages();
     }
 
+    public function getConvo()
+    {
+        $conversation = $this->saver->getConvo();
+        return $conversation;
+    }
+
+    public function getModelMap(): array {
+        $models = [
+            "gpt-4" => new GPT4(),
+            "gpt-4-0613" => new GPT4_32k(),
+            "gpt-4-1106-preview" => new GPT4_1106_Preview(),
+            "gpt-3.5-turbo" => new GPT35(),
+        ];
+        return $models;
+    }
+
     public function getModel(): Model
     {
-        return $this->comms->getModel();
-    }
-
-    public function setModel(Model $model): void
-    {
-        $this->comms->setModel($model);
-    }
-
-    private function initMessages(): void
-    {
-        $convoconf = $this->saver->getConf();
-        $premise = $convoconf["premise"] ?? null;
-        $models = [
-            "gpt-3.5-turbo" => new GPT35(),
-            "gpt-4" => new GPT4()
-        ];
-        if (isset($convoconf['model']) && isset($models[$convoconf['model']])) {
-            $model = $models[$convoconf['model']];
-        } else {
-            $model = new GPT35();
+        $val = $this->saver->getConfVal("model");
+        $val ??= "gpt-3.5-turbo";
+        $map = $this->getModelMap();
+        if (! isset($map[$val])) {
+            throw new \Exception("unknown model '{$val}'");
         }
-        $this->comms = new Comms($model, $this->conf->openai->token);
-        $premise = $convoconf["premise"] ?? null;
-        $this->messages = new Messages($premise);
-        $dbmsgs = $this->saver->getMessages(100);
-        foreach ($dbmsgs as $msg) {
-            $this->messages->addMessage($msg);
-        }
+        return $map[$val];
     }
 
     public function getSaver()
@@ -69,60 +110,46 @@ class Runner
         return $this->saver;
     }
 
-    public function getComms()
+    // delegated  //////////////////////////////////////////////////////////////////
+
+    public function getMessageHistory(int $count = 1, int $maxtokens = 0)
     {
-        return $this->comms;
+        return $this->moderunner->getMessageHistory($count, $maxtokens);
     }
 
-    public function getMessages()
+    public function getCommands(): array
     {
-        return $this->messages;
+        return $this->moderunner->getCommands();
+    }
+
+    public function setModel(Model $model): void
+    {
+        $this->saver->setConfVal("model", $model->getName());
+        $this->moderunner->setModel($model);
+    }
+
+    private function initMessages(): void
+    {
+        $this->moderunner->initMessages();
     }
 
     public function getPremise()
     {
-        return $this->messages->getPremise();
+        return $this->moderunner->getPremise();
     }
 
     public function setPremise(string $premise)
     {
-        $this->messages->setPremise($premise);
-        $convoconf = $this->saver->setConfVal("premise", $premise);
+        return $this->moderunner->setPremise($premise);
     }
 
-    public function query(string $message, ?Messages $messages = null)
+    public function query(string $message)
     {
-        $msgs = $messages ?? $this->messages;
-        $usermessage = $msgs->addNewMessage("user", $message);
-        $this->saver->saveMessage($usermessage);
-        $resp = $this->comms->sendQuery($msgs);
-        $asstmessage = $msgs->addNewMessage("assistant", $resp);
-        $this->saver->saveMessage($asstmessage);
-        $this->saver->setConfVal("lastmessage", (new \DateTime("now"))->format("c"));
-        return $resp;
+        return $this->moderunner->query($message);
     }
 
-    public function summariseMostRecent()
+    public function cleanUp()
     {
-        $dbmsgs = $this->saver->getUnsummarisedMessages(3);
-        if (! count($dbmsgs)) {
-            return;
-        }
-        $prompt = "Please summarise this message in 300 characters or fewer: ";
-        foreach ($dbmsgs as $dbmsg) {
-            if (strlen($dbmsg->getContent()) <= 300) {
-                $summary = $dbmsg->getContent();
-            } else {
-                try {
-                    $this->ctl->addNewMessage("user", $prompt . $dbmsg->getContent());
-                    $summary = $this->ctlcomms->sendQuery($this->ctl);
-                } catch (\Exception $e) {
-                    // probably too large -- fall back
-                    $summary = $dbmsg->getContextSummary();
-                }
-            }
-            $dbmsg->setSummary($summary);
-            $this->saver->saveMessage($dbmsg);
-        }
+        return $this->moderunner->cleanUp();
     }
 }

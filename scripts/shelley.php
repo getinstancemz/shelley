@@ -47,6 +47,4 @@ $conf->datadir ??= __DIR__ . "/../data";
 
 $saver = new ConvoSaver($conf->datadir, $convo);
 $runner = new Runner($conf, $saver);
-$ui = new ProcessUI($runner);
-$ui->run();
-
+$runner->run();

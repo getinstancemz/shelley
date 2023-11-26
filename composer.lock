@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5ffe1d354b47750ab465aa9d46d8dfc8",
+    "content-hash": "87d180bf1862f7217e34a7c8a23dc4b5",
     "packages": [
         {
             "name": "gioni06/gpt3-tokenizer",
@@ -58,6 +58,56 @@
                 "source": "https://github.com/Gioni06/GPT3Tokenizer"
             },
             "time": "2023-04-16T12:49:18+00:00"
+        },
+        {
+            "name": "hiddenhatpress/openai-assistants",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hiddenhatpress/openai-assistants.git",
+                "reference": "640a253340b46032461da129f119e96c4e3fe5f7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hiddenhatpress/openai-assistants/zipball/640a253340b46032461da129f119e96c4e3fe5f7",
+                "reference": "640a253340b46032461da129f119e96c4e3fe5f7",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^10.0",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "hiddenhatpress\\openai\\assistants\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Matt Zandstra",
+                    "email": "matt@hiddenhat.press",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A quick and dirty client for OpenAI's assistants API",
+            "homepage": "https://github.com/hiddenhatpress/openai-assistants",
+            "keywords": [
+                "ai"
+            ],
+            "support": {
+                "issues": "https://github.com/hiddenhatpress/openai-assistants/issues",
+                "source": "https://github.com/hiddenhatpress/openai-assistants/tree/v1.0.1"
+            },
+            "time": "2023-11-24T23:39:36+00:00"
         },
         {
             "name": "orhanerday/open-ai",

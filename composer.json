@@ -9,6 +9,7 @@
     },
     "require": {
         "orhanerday/open-ai": "*",
-        "gioni06/gpt3-tokenizer": "^1.1"
+        "gioni06/gpt3-tokenizer": "^1.1",
+        "hiddenhatpress/openai-assistants": "^1.0"
     }
 }

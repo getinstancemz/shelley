@@ -6,7 +6,7 @@ class FileCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void
     {
-        $path = $args[0];
+        $path = trim($args[0]);
         if (empty($path)) {
             print "# Path required\n";
             return;

@@ -19,11 +19,6 @@ abstract class AbstractCommand implements CommandInterface
         $this->runner = $runner;
     }
 
-    public function getMessages()
-    {
-        return $this->runner->getMessages();
-    }
-
     public function getLastMatchArgs()
     {
         return $this->args;

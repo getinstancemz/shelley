@@ -117,6 +117,12 @@ class ConvoSaver
         return $ret;
     }
 
+    public function getConfVal(string $confkey): ?string
+    {
+        $conf = $this->getConf();
+        return $conf[$confkey] ?? null;
+    }
+
     public function setConfVal($confkey, $confval): void
     {
         $oldconf = $this->getConf();

@@ -3,58 +3,29 @@
 namespace getinstance\utils\aichat\control;
 
 use getinstance\utils\aichat\persist\ConvoSaver;
-use getinstance\utils\aichat\uicommand\ArbitraryCommand;
-use getinstance\utils\aichat\uicommand\DeleteConvoCommand;
-use getinstance\utils\aichat\uicommand\EditCommand;
-use getinstance\utils\aichat\uicommand\HelpCommand;
-use getinstance\utils\aichat\uicommand\RedoCommand;
-use getinstance\utils\aichat\uicommand\DisplayBufferCommand;
-use getinstance\utils\aichat\uicommand\FileCommand;
-use getinstance\utils\aichat\uicommand\ContextCommand;
-use getinstance\utils\aichat\uicommand\PremiseCommand;
-use getinstance\utils\aichat\uicommand\ChatsCommand;
-use getinstance\utils\aichat\uicommand\UseCommand;
-use getinstance\utils\aichat\uicommand\ModelCommand;
+
 use getinstance\utils\aichat\uicommand\NotFoundCommand;
-use getinstance\utils\aichat\ai\Messages;
+use getinstance\utils\aichat\uicommand\ArbitraryCommand;
 
 class ProcessUI
 {
-    private array $commands = [];
-    private ConvoSaver $saver;
     private NotFoundCommand $notfoundcommand;
 
     public function __construct(private Runner $runner)
     {
-        $this->saver = $runner->getSaver();
-        $this->commands = [
-            new HelpCommand($this, $runner),
-            new EditCommand($this, $runner),
-            new RedoCommand($this, $runner),
-            new DisplayBufferCommand($this, $runner),
-            new FileCommand($this, $runner),
-            new ContextCommand($this, $runner),
-            new PremiseCommand($this, $runner),
-            new ChatsCommand($this, $runner),
-            new UseCommand($this, $runner),
-            new DeleteConvoCommand($this, $runner),
-            new ModelCommand($this, $runner),
-            // Add other command classes here
-        ];
         $this->notfoundcommand = new NotFoundCommand($this, $runner);
     }
 
     public function getCommands(): array
     {
-        return $this->commands;
+        return $this->runner->getCommands();
     }
 
     public function initSummarise()
     {
         // summarise current state of conversation
-        $msgs = $this->runner->getMessages();
-        $conversation = $this->saver->getConvo();
-        $conf = $this->saver->getConf();
+        $conversation = $this->runner->getConvo();
+        $conf = $this->runner->getConf();
 
         print "# starting or resuming '{$conversation['name']}'\n";
         if (isset($conf['lastmessage'])) {
@@ -63,7 +34,7 @@ class ProcessUI
         print "# premise: ".$this->runner->getPremise()."\n";
         print "# model:   ".$this->runner->getModel()->getName()."\n";
         print "#\n";
-        $context = $msgs->toArray(5);
+        $context = $this->runner->getMessageHistory(5);
         $indent = str_pad("", 13);
 
         // there will be one because we've already started
@@ -100,9 +71,10 @@ class ProcessUI
                 $resp .= $e->getTraceAsString();
             }
             print "ASSISTANT > {$resp} \n";
-
-            print "# summarising...";
-            $this->runner->summariseMostRecent();
+            
+            print "# cleaning up...";
+            $this->runner->cleanUp();
+            //$this->runner->summariseMostRecent();
             print " done\n";
         }
     }
@@ -191,7 +163,7 @@ class ProcessUI
 
     private function invokeCommand(string $input, string &$buffer)
     {
-        $commands = $this->commands;
+        $commands = $this->runner->getCommands();
         $commands[] = $this->notfoundcommand;
         foreach ($commands as $command) {
             if ($command->matches($input)) {
