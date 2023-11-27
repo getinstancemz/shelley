@@ -64,8 +64,9 @@ class ChatModeRunner extends ModeRunner
     public function query(string $message)
     {
         $msgs = $this->messages;
-        $usermessage = $msgs->addNewMessage("user", $message);
+        $message = new Message(-1, "user", $content);
         $this->saver->saveMessage($usermessage);
+        
         $resp = $this->comms->sendQuery($msgs);
         $asstmessage = $msgs->addNewMessage("assistant", $resp);
         $this->saver->saveMessage($asstmessage);

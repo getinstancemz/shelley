@@ -20,7 +20,7 @@ class Runner
     private ProcessUI $ui;
     private ModeRunner $moderunner;
 
-    public function __construct(private object $conf, private ConvoSaver $saver)
+    public function __construct(protected object $conf, private ConvoSaver $saver)
     {
         $this->ui = new ProcessUI($this);
         $this->moderunner = $this->getModeRunner();
@@ -75,6 +75,7 @@ class Runner
             throw new \Exception("No conversation: $name");
         }
         $this->saver->useConvo($name);
+        $this->moderunner = $this->getModeRunner();
         $this->initMessages();
     }
 

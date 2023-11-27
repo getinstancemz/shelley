@@ -123,6 +123,16 @@ class ConvoSaver
         return $conf[$confkey] ?? null;
     }
 
+    public function delConfVal($confkey): void
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM convoconf 
+                WHERE conversation_id=:conversation_id AND confkey=:confkey");
+        $stmt->execute([
+            ':conversation_id' => $this->convo_id,
+            ':confkey' => $confkey
+        ]);
+    }
+
     public function setConfVal($confkey, $confval): void
     {
         $oldconf = $this->getConf();
