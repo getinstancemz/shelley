@@ -11,6 +11,7 @@ use getinstance\utils\aichat\persist\ConvoSaver;
 
 use getinstance\utils\aichat\control\ProcessUI;
 
+use getinstance\utils\aichat\uicommand\AbstractCommand;
 use getinstance\utils\aichat\uicommand\DeleteConvoCommand;
 use getinstance\utils\aichat\uicommand\EditCommand;
 use getinstance\utils\aichat\uicommand\HelpCommand;
@@ -62,7 +63,7 @@ abstract class ModeRunner
         return $this->commands;
     }
 
-    protected function addCommand(UICommand $command): void
+    protected function addCommand(AbstractCommand $command): void
     {
         $this->commands[] = $command;
     }
@@ -75,7 +76,7 @@ abstract class ModeRunner
 
     public abstract function initMessages(): void;
 
-    protected abstract function setModel(Model $model): void;
+    public abstract function setModel(Model $model): void;
  
     public abstract function query(string $message);
 

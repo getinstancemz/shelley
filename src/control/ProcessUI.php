@@ -123,6 +123,8 @@ class ProcessUI
                 return [$actual[$input][0], $actual[$input][1]];
             }
         }
+        // never reached but let's keep phpstan happy
+        return [];
     }
 
     public function confirm(string $prompt): bool {

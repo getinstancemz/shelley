@@ -2,6 +2,7 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
+
 class FileCommand extends AbstractCommand
 {
     public function execute(string &$buffer, array $args): void

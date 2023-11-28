@@ -6,6 +6,8 @@ use getinstance\utils\aichat\ai\Message;
 use hiddenhatpress\openai\assistants\Assistants;
 use hiddenhatpress\openai\assistants\AsstComms;
 
+use getinstance\utils\aichat\uicommand\assistants\AFileCommand;
+
 use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
 use getinstance\utils\aichat\persist\ConvoSaver;
@@ -23,6 +25,9 @@ class AssistantModeRunner extends ModeRunner
     public function __construct(Runner $runner, ProcessUI $ui, object $conf, ConvoSaver $saver)
     {
         parent::__construct($runner, $ui, $conf, $saver);
+        print "hello!";
+        // commands
+        $this->addCommand(new AFileCommand($ui, $runner));
         $this->initMessages();
     }
    

@@ -11,7 +11,7 @@ class ConvoSaver
     private int $convo_id;
     private string $convoname;
 
-    public function __construct(private string $datadir, string $convoname)
+    public function __construct(string $datadir, string $convoname)
     {
         if (! file_exists($datadir)) {
             mkdir($datadir, 0755) || throw new \Exception("could not create directory ($datadir)");
@@ -106,7 +106,7 @@ class ConvoSaver
         $stmt = $this->pdo->prepare("SELECT * FROM convoconf WHERE conversation_id = :cid");
         $stmt->execute([':cid' => $this->convo_id]);
         $conf = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if ($conf === false) {
+        if (empty($conf)) {
             return [];
         }
         $ret = [];

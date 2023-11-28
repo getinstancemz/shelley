@@ -2,6 +2,7 @@
 
 namespace getinstance\utils\aichat\control;
 
+use getinstance\utils\aichat\ai\Message;
 use getinstance\utils\aichat\ai\Comms;
 use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
@@ -64,7 +65,7 @@ class ChatModeRunner extends ModeRunner
     public function query(string $message)
     {
         $msgs = $this->messages;
-        $message = new Message(-1, "user", $content);
+        $usermessage = $msgs->addNewMessage("user", $message);
         $this->saver->saveMessage($usermessage);
         
         $resp = $this->comms->sendQuery($msgs);
