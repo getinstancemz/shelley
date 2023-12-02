@@ -8,6 +8,9 @@ use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
 use getinstance\utils\aichat\persist\ConvoSaver;
 
+use getinstance\utils\aichat\uicommand\ChatCommandFactory;
+use getinstance\utils\aichat\uicommand\ModelCommand;
+
 use getinstance\utils\aichat\ai\models\GPT4;
 use getinstance\utils\aichat\ai\models\GPT35;
 
@@ -16,14 +19,18 @@ class ChatModeRunner extends ModeRunner
     // for saving summaries
     private Messages $ctl;
     private Comms $ctlcomms;
+    private Comms $comms;
 
     public function __construct(Runner $runner, ProcessUI $ui, object $conf, ConvoSaver $saver)
     {
-        parent::__construct($runner, $ui, $conf, $saver);
+        $commfactory = new ChatCommandFactory($runner, $ui);
+        parent::__construct($runner, $ui, $commfactory, $conf, $saver);
 
         $this->initMessages();
         $this->ctl = new Messages("You are an LLM client management helper. You summarise messages and perform other meta tasks to help the user and primary assistant communicate well");
         $this->ctlcomms = new Comms(new GPT35(), $this->conf->openai->token);
+
+        $this->addCommand(new ModelCommand($ui, $runner));
     }
    
     public function getPremise()

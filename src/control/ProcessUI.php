@@ -98,6 +98,8 @@ class ProcessUI
                 $buffer .= $input;
                 
                 break;
+            } else {
+                $prompt = $origprompt;
             }
 
         }

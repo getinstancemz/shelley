@@ -2,21 +2,19 @@
 
 namespace getinstance\utils\aichat\uicommand;
 
-class PremiseCommand extends AbstractCommand
+abstract class PremiseCommand extends AbstractCommand
 {
-    public function execute(string &$buffer, array $args): void
+
+    protected function testForReport(array $args): bool
     {
         $premise = $args[0];
         // if empty then just report
         if (preg_match("/^\s*$/", $premise)) {
             print "# premise:\n";
             print "# " . $this->runner->getPremise() . "\n";
-            return;
+            return true;
         }
-
-        // otherwise change it
-        $this->runner->setPremise($args[0]);
-        print "# premise set:\n";
+        return false;
     }
 
     public function getName(): string

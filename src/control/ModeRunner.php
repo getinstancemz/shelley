@@ -11,6 +11,7 @@ use getinstance\utils\aichat\persist\ConvoSaver;
 
 use getinstance\utils\aichat\control\ProcessUI;
 
+use getinstance\utils\aichat\uicommand\AbstractCommandFactory;
 use getinstance\utils\aichat\uicommand\AbstractCommand;
 use getinstance\utils\aichat\uicommand\DeleteConvoCommand;
 use getinstance\utils\aichat\uicommand\EditCommand;
@@ -22,20 +23,18 @@ use getinstance\utils\aichat\uicommand\ContextCommand;
 use getinstance\utils\aichat\uicommand\PremiseCommand;
 use getinstance\utils\aichat\uicommand\ChatsCommand;
 use getinstance\utils\aichat\uicommand\UseCommand;
-use getinstance\utils\aichat\uicommand\ModelCommand;
 use getinstance\utils\aichat\uicommand\ModeCommand;
 
 abstract class ModeRunner
 {
     protected Messages $messages;
-    protected Comms $comms;
     private array $commands = [];
 
     protected object $conf;
     protected ConvoSaver $saver;
     protected Runner $runner;
 
-    public function __construct(Runner $runner, ProcessUI $ui, object $conf, ConvoSaver $saver)
+    public function __construct(Runner $runner, ProcessUI $ui, AbstractCommandFactory $commfactory, object $conf, ConvoSaver $saver)
     {
         $this->conf = $conf;
         $this->saver = $saver;
@@ -48,11 +47,10 @@ abstract class ModeRunner
             new DisplayBufferCommand($ui, $runner),
             new FileCommand($ui, $runner),
             new ContextCommand($ui, $runner),
-            new PremiseCommand($ui, $runner),
+            $commfactory->getPremiseCommand($ui, $runner),
             new ChatsCommand($ui, $runner),
             new UseCommand($ui, $runner),
             new DeleteConvoCommand($ui, $runner),
-            new ModelCommand($ui, $runner),
             new ModeCommand($ui, $runner),
             // Add other command classes here
         ];

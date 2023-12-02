@@ -99,7 +99,72 @@ class ConvoSaver
             type TEXT,
             FOREIGN KEY (conversation_id) REFERENCES conversation(id)
         )");
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS afile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            remoteid TEXT,
+            conversation_id TEXT,
+            path TEXT,
+            filehash TEXT,
+            FOREIGN KEY (conversation_id) REFERENCES conversation(id)
+        )");
+
     }
+
+	public function getFileByPath(string $path): ?array
+	{
+		$stmt = $this->pdo->prepare("SELECT * FROM afile WHERE path = :path AND conversation_id = :conversation_id");
+		$stmt->execute([':path' => $path, ':conversation_id' => $this->convo_id]);
+		$file = $stmt->fetch(\PDO::FETCH_ASSOC);
+		return is_array($file) ? $file : null;
+	}
+
+	public function getFileByRemoteId(string $remoteid): ?array
+	{
+		$stmt = $this->pdo->prepare("SELECT * FROM afile WHERE remoteid= :remoteid AND conversation_id = :conversation_id");
+		$stmt->execute([':remoteid' => $remoteid, ':conversation_id' => $this->convo_id]);
+		$file = $stmt->fetch(\PDO::FETCH_ASSOC);
+		return is_array($file) ? $file : null;
+	}
+
+	public function removeFile(string $id): bool
+	{
+		$stmt = $this->pdo->prepare("DELETE FROM afile WHERE id= :id");
+		$stmt->execute([':id' => $id]);
+		return true;
+	}
+
+	public function addOrUpdateFile(string $path, string $remoteid, string $filehash): array
+	{
+		$file = $this->getFileByPath($path);
+		$writearr = [
+				':remoteid' => $remoteid,
+				':path' => $path,
+				':filehash' => $filehash,
+				':conversation_id' => $this->convo_id
+			];
+		if (is_array($file)) {
+			// Update the existing file
+			$stmt = $this->pdo->prepare("UPDATE afile SET remoteid = :remoteid, filehash = :filehash WHERE path = :path AND conversation_id = :conversation_id");
+			$stmt->execute($writearr);
+		} else {
+			// Add a new file
+			$stmt = $this->pdo->prepare("INSERT INTO afile (remoteid, path, filehash, conversation_id) VALUES (:remoteid, :path, :filehash, :conversation_id)");
+			$stmt->execute($writearr);
+		}
+		return $this->getFileByPath($path); // Assuming this now returns an array as per the getFileByPath change
+	}
+
+	public function fileChanged(string $path, string $filehash): bool
+	{
+		$file = $this->getFileByPath($path);
+		if (is_null($file)) {
+			// If the file does not exist in the database, consider it changed/new
+			return true;
+		}
+		// Compare hashes explicitly. If different, file has changed
+		return $file['filehash'] !== $filehash;
+	}
 
     public function getConf(): array
     {

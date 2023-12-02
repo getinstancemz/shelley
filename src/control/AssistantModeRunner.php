@@ -6,7 +6,16 @@ use getinstance\utils\aichat\ai\Message;
 use hiddenhatpress\openai\assistants\Assistants;
 use hiddenhatpress\openai\assistants\AsstComms;
 
-use getinstance\utils\aichat\uicommand\assistants\AFileCommand;
+use getinstance\utils\aichat\persist\FileManager;
+
+use getinstance\utils\aichat\ai\assistants\CommsManager;
+
+use getinstance\utils\aichat\uicommand\AssistantsCommandFactory;
+use getinstance\utils\aichat\uicommand\AssistantAFileCommand;
+use getinstance\utils\aichat\uicommand\AssistantAFileListCommand;
+use getinstance\utils\aichat\uicommand\AssistantADirCommand;
+use getinstance\utils\aichat\uicommand\AssistantDelFileCommand;
+use getinstance\utils\aichat\uicommand\AssistantToolsCommand;
 
 use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
@@ -16,30 +25,72 @@ class AssistantModeRunner extends ModeRunner
 {
     // for saving summaries
     private Messages $ctl;
-    private Comms $ctlcomms;
-    private Assistants $assistants;
 
-    private array $asstentity = []; 
-
+    private CommsManager $comms;
+    //private Comms $ctlcomms;
+    //private Assistants $assistants;
 
     public function __construct(Runner $runner, ProcessUI $ui, object $conf, ConvoSaver $saver)
     {
-        parent::__construct($runner, $ui, $conf, $saver);
-        print "hello!";
+        $commfactory = new AssistantsCommandFactory($runner, $ui);
+        parent::__construct($runner, $ui, $commfactory, $conf, $saver, $commfactory);
         // commands
-        $this->addCommand(new AFileCommand($ui, $runner));
+        $this->addCommand(new AssistantAFileCommand($ui, $runner, $this));
+        $this->addCommand(new AssistantAFileListCommand($ui, $runner, $this));
+        $this->addCommand(new AssistantDelFileCommand($ui, $runner, $this));
+        $this->addCommand(new AssistantADirCommand($ui, $runner, $this));
+        $this->addCommand(new AssistantToolsCommand($ui, $runner, $this));
         $this->initMessages();
     }
-   
-    public function getPremise()
+
+
+    public function getFileManager(): FileManager
     {
-        return $this->asstentity['instructions'];
+        return new FileManager($this->comms, $this->saver);
     }
 
-    public function setPremise(string $premise)
+    public function uploadAssistantDirectory($path): bool
     {
-        $this->messages->setPremise($premise);
+        $this->getFileManager()->addDir($path); 
+        return true;
+    }
+
+    public function uploadAssistantFile($path): bool
+    {
+        //$resp = $this->comms->uploadAssistantFile($path);
+        $this->getFileManager()->saveFile($path); 
+        return true;
+    }
+
+    public function listAssistantFiles(): array
+    {
+        $resp = $this->comms->listAssistantFiles();
+        return $resp;
+    }
+
+    public function delAssistantFile($remoteid): bool
+    {
+        $this->getFileManager()->removeFileByRemote($remoteid); 
+        return true;
+    }
+
+    public function getPremise()
+    {
+        $asstentity = $this->comms->getAssistant();
+        return $asstentity['instructions'];
+    }
+
+    public function setPremise(string $premise): bool
+    {
         $convoconf = $this->saver->setConfVal("premise", $premise);
+        $setresp = $this->comms->setPremise($premise);
+        return true;
+    }
+
+    public function setTool(string $tool): bool
+    {
+        $setresp = $this->comms->setTool($tool);
+        return true;
     }
 
     public function getMessageHistory(int $count = 1, int $maxtokens = 0): array
@@ -54,14 +105,14 @@ class AssistantModeRunner extends ModeRunner
 
     public function setModel(Model $model): void
     {
-        $this->comms->setModel($model);
+        // currently we don't set a model in Assistants mode
     }
+
 
     public function setupAssistant()
     {
         // TODO - fix model handling
         $convoconf = $this->saver->getConf();
-        $convoname = $this->saver->getConvoName();
         $modelmap = $this->runner->getModelMap();
 
         // hardcode for now
@@ -72,9 +123,19 @@ class AssistantModeRunner extends ModeRunner
 
         // get assistant comms
         $asstcomms = new AsstComms($model->getName(), $this->conf->openai->token);
-        $this->assistants = new Assistants($asstcomms);
-        $premise = $convoconf["premise"]  ?? "You are an interested, inquisitive and helpful assistant";
 
+        $assistants = new Assistants($asstcomms);
+        $convoname = $this->saver->getConvoName();
+        $premise = $convoconf["premise"]  ?? "You are an interested, inquisitive and helpful assistant";
+        $threadid =  $convoconf['thread_id'] ?? null;
+        $assistantid =  $convoconf['assistant_id'] ?? null;
+
+        // CommsManager  will make the connection and create assistant / thread if needed
+        $this->comms = new CommsManager($assistants, $convoname, $premise,  $assistantid, $threadid);
+        $this->saver->setConfVal("assistant_id", $this->comms->getAssistantId());
+        $this->saver->setConfVal("thread_id", $this->comms->getThreadId());
+
+        /*
         $asstservice = $this->assistants->getAssistantService();
         $threadservice = $this->assistants->getThreadService();
 
@@ -97,37 +158,26 @@ class AssistantModeRunner extends ModeRunner
             $message = "created new";
         }
         $this->asstentity = $asstresp;
+        */
     }
 
     public function initMessages(): void
     {
-        $convoconf = $this->saver->getConf();
+        //$convoconf = $this->saver->getConf();
         $this->setupAssistant();
-        /*
-        if (! isset($convoconf['assistant_id'])) {
-            $this->setupAssistant();
-            exit;
-        }
-        */
-
-/*
-        $premise = $convoconf["premise"] ?? null;
-        $model = $this->runner->getModel(); 
-        $this->comms = new Comms($model, $this->conf->openai->token);
-        $premise = $convoconf["premise"] ?? null;
-        $this->messages = new Messages($premise);
-        $dbmsgs = $this->saver->getMessages(100);
-        foreach ($dbmsgs as $msg) {
-            $this->messages->addMessage($msg);
-        }
-*/
     }
 
-    public function query(string $message)
+    public function query(string $message): string
     {
         $usermessage = new Message(-1, "user", $message);
         $this->saver->saveMessage($usermessage);
 
+        $resp = $this->comms->query($message);
+
+        $asstmessage = new Message(-1, "assistant", $resp);
+        $this->saver->saveMessage($asstmessage);
+        return $resp;
+        /*
         $convoconf = $this->saver->getConf();
         $asstservice = $this->assistants->getAssistantService();
         $threadservice = $this->assistants->getThreadService();
@@ -145,9 +195,8 @@ class AssistantModeRunner extends ModeRunner
         }
         $msgs = $messageservice->listMessages($threadid);
         $resp = $msgs['data'][0]['content'][0]['text']['value'];
-        $asstmessage = new Message(-1, "assistant", $resp);
-        $this->saver->saveMessage($asstmessage);
         return $resp;
+        */
     }
 
     public function cleanUp()
