@@ -26,7 +26,9 @@ class AssistantADirCommand extends AbstractCommand
             print "# unable to upload directory: {$e->getMessage()}\n";
             return;
         }
-        print "# diretory contents uploaded\n";
+        print "# directory contents compiled\n";
+        $filemanager->uploadBatchFiles(); 
+        print "# directory contents uploaded\n";
     }
 
     public function getName(): string

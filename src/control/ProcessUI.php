@@ -33,6 +33,8 @@ class ProcessUI
         }
         print "# premise: ".$this->runner->getPremise()."\n";
         print "# model:   ".$this->runner->getModel()->getName()."\n";
+        print "# mode:   ".$this->runner->getMode()."\n";
+        print "# base directory:   ".$this->runner->getCwd()."\n";
         print "#\n";
         $context = $this->runner->getMessageHistory(5);
         $indent = str_pad("", 13);

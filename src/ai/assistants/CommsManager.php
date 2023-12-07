@@ -126,9 +126,16 @@ class CommsManager
 
         $msgresp = $messageservice->create($this->threadid, $message);
         $runresp = $runservice->create($this->threadid, $this->assistantid);
-        while($runresp['status'] != "completed") {
+        while(
+            $runresp['status'] == "queued" || 
+            $runresp['status'] == "in_progress"
+
+        ) {
             $runresp = $runservice->retrieve($this->threadid, $runresp['id']);
             sleep(1);
+        }
+        if ( $runresp['status'] != "completed" ) {
+            throw new \Exception("unknown issue with query: ".print_r($runresp, true));
         }
         $msgs = $messageservice->listMessages($this->threadid);
         $resp = $msgs['data'][0]['content'][0]['text']['value'];

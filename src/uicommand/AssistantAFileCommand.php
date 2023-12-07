@@ -27,6 +27,7 @@ class AssistantAFileCommand extends AbstractCommand
             print "# unable to upload file: {$e->getMessage()}\n";
             return;
         }
+        $filemanager->uploadBatchFiles(); 
         print "# file uploaded\n";
     }
 

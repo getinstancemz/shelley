@@ -68,9 +68,9 @@ class AssistantModeRunner extends ModeRunner
         return $resp;
     }
 
-    public function delAssistantFile($remoteid): bool
+    public function delAssistantFile(string $path): bool
     {
-        $this->getFileManager()->removeFileByRemote($remoteid); 
+        $this->getFileManager()->removeFile($path); 
         return true;
     }
 
@@ -201,6 +201,7 @@ class AssistantModeRunner extends ModeRunner
 
     public function cleanUp()
     {
+        $this->getFileManager()->uploadBatchFiles();
     }
 
     private function summariseMostRecent()

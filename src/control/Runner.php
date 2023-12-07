@@ -24,11 +24,25 @@ class Runner
     {
         $this->ui = new ProcessUI($this);
         $this->moderunner = $this->getModeRunner();
+
+        // change the workind directory if necessary -- store if not already set
+        $cwd = $this->saver->getConfVal("cwd");
+        if (is_null($cwd)) {
+            $cwd = realpath(getcwd());
+            $cwd = $this->saver->setConfVal("cwd", $cwd);
+        }
+        chdir($cwd);
     }
 
     // managed here //////////////////////////////////////////////////////////////////
     
-    public function getMode()
+    public function getCwd(): string
+    {
+        $cwd = $this->saver->getConfVal("cwd");
+        return $cwd;
+    }
+
+    public function getMode(): string
     {
         $convoconf = $this->saver->getConf();
         $mode = $convoconf["mode"] ?? "chat";
@@ -121,6 +135,12 @@ class Runner
     public function getCommands(): array
     {
         return $this->moderunner->getCommands();
+    }
+
+    public function setCwd(string $cwd): void
+    {
+        $this->saver->setConfVal("model", $model->getName());
+        $this->moderunner->setModel($model);
     }
 
     public function setModel(Model $model): void

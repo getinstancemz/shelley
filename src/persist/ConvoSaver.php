@@ -9,6 +9,7 @@ class ConvoSaver
 {
     private \PDO $pdo;
     private int $convo_id;
+    private string $datadir;
     private string $convoname;
 
     public function __construct(string $datadir, string $convoname)
@@ -16,6 +17,7 @@ class ConvoSaver
         if (! file_exists($datadir)) {
             mkdir($datadir, 0755) || throw new \Exception("could not create directory ($datadir)");
         }
+        $this->datadir = $datadir;
         $db_file = realpath($datadir) . '/chatbot.db';
         $this->pdo = new \PDO(
             "sqlite:" . $db_file,
@@ -24,6 +26,11 @@ class ConvoSaver
             [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
         );
         $this->useConvo($convoname);
+    }
+
+    public function getDataDir(): string
+    {
+        return $this->datadir;
     }
 
     public function hasConvo(string $name): bool|int
@@ -102,14 +109,103 @@ class ConvoSaver
 
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS afile (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            remoteid TEXT,
             conversation_id TEXT,
             path TEXT,
+            size INTEGER default 0,
             filehash TEXT,
+            batchid INTEGER DEFAULT 0,
+            FOREIGN KEY (conversation_id) REFERENCES conversation(id),
+            FOREIGN KEY (batchid) REFERENCES batchfile(id)
+        )");
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS batchfile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            remoteid TEXT DEFAULT \"\",
+            size INTEGER DEFAULT 0,
+            status TEXT,
+            conversation_id TEXT,
             FOREIGN KEY (conversation_id) REFERENCES conversation(id)
         )");
 
     }
+
+    public function deleteBatchFile(int $id)
+    {
+        $max = 15;
+		$stmt = $this->pdo->prepare("DELETE FROM batchfile WHERE id = :id and conversation_id = :conversation_id");
+		$stmt->execute([':id' => $id, ':conversation_id' => $this->convo_id]);
+        return true;
+    }
+
+    public function getNextBatchFile()
+    {
+        $max = 15;
+		$stmt = $this->pdo->prepare("SELECT * FROM batchfile WHERE conversation_id = :conversation_id ORDER BY size");
+		$stmt->execute([':conversation_id' => $this->convo_id]);
+		$files = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (count($files) < $max) {
+            $name = "batch" . (count($files)+1);
+            return $this->newBatchFile($name);
+        }
+        // otherwise return the smallest sized file
+        return $files[0];
+    }
+
+    public function newBatchFile(string $name): array
+    {
+        $existing = $this->getBatchFileByName($name);
+        if (! is_null($existing)) {
+            throw new \Exception("Batch file $name already exists for conversation ({$this->convo_id})");
+        }
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO batchfile (name, status, conversation_id) 
+            VALUES (:name, 'init', :conversation_id)
+        ");
+		$stmt->execute([
+            ':conversation_id' => $this->convo_id,
+            ':name' => $name,
+        ]);
+        return [
+            "id" => $this->pdo->lastInsertId(),
+            "name" => "$name",
+            "status" => "init",
+            "size" => 0 ,
+            "conversation_id" => $this->convo_id
+        ];
+    }
+
+	public function getBatchFilesToUpload(): array
+    {
+		$stmt = $this->pdo->prepare("SELECT * FROM batchfile WHERE status='queued' AND conversation_id = :conversation_id");
+		$stmt->execute([':conversation_id' => $this->convo_id]);
+		$files = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $files;
+    }
+
+	public function getFilesByBatch(int $batchid): array
+    {
+		$stmt = $this->pdo->prepare("SELECT * FROM afile WHERE batchid=:batchid AND conversation_id = :conversation_id");
+		$stmt->execute([':batchid' => $batchid, ':conversation_id' => $this->convo_id]);
+		$files = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $files;
+    }
+
+	public function getBatchFile(string $id): ?array
+    {
+		$stmt = $this->pdo->prepare("SELECT * FROM batchfile WHERE id= :id");
+		$stmt->execute([':id' => $id]);
+		$file = $stmt->fetch(\PDO::FETCH_ASSOC);
+		return is_array($file) ? $file : null;
+    }
+
+	public function getBatchFileByName(string $name): ?array
+	{
+		$stmt = $this->pdo->prepare("SELECT * FROM batchfile WHERE name= :name AND conversation_id = :conversation_id");
+		$stmt->execute([':name' => $name, ':conversation_id' => $this->convo_id]);
+		$file = $stmt->fetch(\PDO::FETCH_ASSOC);
+		return is_array($file) ? $file : null;
+	}
 
 	public function getFileByPath(string $path): ?array
 	{
@@ -127,6 +223,23 @@ class ConvoSaver
 		return is_array($file) ? $file : null;
 	}
 
+	public function markBatchFileForUpload(string $batchid, int $additionalsize): bool
+    {
+        $batch = $this->getBatchFile($batchid);  
+        $oldsize = $batch['size'];
+        $newsize = $oldsize + $additionalsize;
+		$stmt = $this->pdo->prepare("UPDATE batchfile SET size = :size, status = 'queued' WHERE id = :id");
+		$stmt->execute([':id' => $batchid, ':size' => $newsize]);
+        return true;
+    }
+
+	public function markBatchFileWritten(string $batchid, string $remoteid): bool
+    {
+		$stmt = $this->pdo->prepare("UPDATE batchfile SET status = 'written', remoteid = :remoteid WHERE id = :id");
+		$stmt->execute([':id' => $batchid, ':remoteid' => $remoteid]);
+        return true;
+    }
+
 	public function removeFile(string $id): bool
 	{
 		$stmt = $this->pdo->prepare("DELETE FROM afile WHERE id= :id");
@@ -134,22 +247,31 @@ class ConvoSaver
 		return true;
 	}
 
-	public function addOrUpdateFile(string $path, string $remoteid, string $filehash): array
+	public function addOrUpdateFile(string $path, string $filehash, int $size, int $batchid): array
 	{
 		$file = $this->getFileByPath($path);
 		$writearr = [
-				':remoteid' => $remoteid,
 				':path' => $path,
 				':filehash' => $filehash,
+				':size' => $size,
+				':batchid' => $batchid,
 				':conversation_id' => $this->convo_id
 			];
 		if (is_array($file)) {
 			// Update the existing file
-			$stmt = $this->pdo->prepare("UPDATE afile SET remoteid = :remoteid, filehash = :filehash WHERE path = :path AND conversation_id = :conversation_id");
+			$stmt = $this->pdo->prepare("
+                UPDATE afile SET
+                batchid= :batchid,
+                filehash = :filehash,
+                size= :size
+                WHERE 
+                path = :path AND 
+                conversation_id = :conversation_id
+            ");
 			$stmt->execute($writearr);
 		} else {
 			// Add a new file
-			$stmt = $this->pdo->prepare("INSERT INTO afile (remoteid, path, filehash, conversation_id) VALUES (:remoteid, :path, :filehash, :conversation_id)");
+			$stmt = $this->pdo->prepare("INSERT INTO afile (path, filehash, size, batchid, conversation_id) VALUES ( :path, :filehash, :size, :batchid, :conversation_id)");
 			$stmt->execute($writearr);
 		}
 		return $this->getFileByPath($path); // Assuming this now returns an array as per the getFileByPath change

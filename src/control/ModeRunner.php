@@ -13,6 +13,7 @@ use getinstance\utils\aichat\control\ProcessUI;
 
 use getinstance\utils\aichat\uicommand\AbstractCommandFactory;
 use getinstance\utils\aichat\uicommand\AbstractCommand;
+use getinstance\utils\aichat\uicommand\ChdirCommand;;
 use getinstance\utils\aichat\uicommand\DeleteConvoCommand;
 use getinstance\utils\aichat\uicommand\EditCommand;
 use getinstance\utils\aichat\uicommand\HelpCommand;
@@ -43,6 +44,7 @@ abstract class ModeRunner
         $this->commands = [
             new HelpCommand($ui, $runner),
             new EditCommand($ui, $runner),
+            new ChdirCommand($ui, $runner),
             new RedoCommand($ui, $runner),
             new DisplayBufferCommand($ui, $runner),
             new FileCommand($ui, $runner),

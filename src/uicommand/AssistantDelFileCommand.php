@@ -9,6 +9,7 @@ class AssistantDelFileCommand extends AbstractCommand
     public function execute(string &$buffer, array $args, ): void
     {
         $asstrunner = $this->runner->getModeRunner();
+        $filemanager = $asstrunner->getFileManager();
         $remoteid= trim($args[0]);
         if (empty($remoteid)) {
             print "# Remote id required\n";
@@ -20,6 +21,7 @@ class AssistantDelFileCommand extends AbstractCommand
             print "# ".$e->getMessage();
             return;
         }
+        $filemanager->uploadBatchFiles(); 
         print "# deleted\n";
     }
 
