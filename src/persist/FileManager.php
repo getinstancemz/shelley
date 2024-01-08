@@ -12,6 +12,30 @@ class FileManager
     {
     }
 
+    public function sync(): void
+    {
+        print "# syncing\n";
+        $files = $this->saver->getFiles();
+        foreach ($files as $fileData) {
+            if (file_exists($fileData['path'])) {
+                list($contents, $filehash) = $this->jsonify($fileData['path']);
+		        if ($fileData['filehash'] !== $filehash) {
+                    // findme
+                    print "# sync: {$fileData['path']} changed -- marking for upload\n";
+                    $size = strlen($contents);
+                    $this->saver->addOrUpdateFile($fileData['path'], $filehash, $size, $fileData['batchid']);
+                    print "# updating batch file row\n";
+                    $this->saver->markBatchFileForUpload($fileData['batchid'], $size);
+                } else {
+                    print "# sync: {$fileData['path']} unchanged -- no action\n";
+                }
+            } else {
+                print "# sync: {$fileData['path']} not found -- marking for deletion\n";
+                $this->removeFile($fileData['path']);
+            }
+        }
+    }
+
     public function accept(FileManagerListener $fml) {
         $this->listeners[] = $fml;
     }
@@ -51,9 +75,8 @@ class FileManager
                 print "# ignoring extension: ".$item->getpathname()."\n";
                 continue;
             }
-            print "# adding file ".$item->getpathname()." ... ";
+            print "# adding file '".$item->getpathname()."' ...\n";
             $this->doSaveFile($item->getpathname());
-            print "\n";
         }
         //$this->uploadBatchFiles(); 
         return true;
@@ -94,7 +117,7 @@ class FileManager
             $this->saver->markBatchFileForUpload($batch['id'], $size);
 			return true;
 		}
-
+        // findme
 		// it's old but changed // guard clause for update
 		if ($fileData['filehash'] !== $filehash) {
             print "# old file but changed (hash does not match)\n";

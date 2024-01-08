@@ -29,7 +29,7 @@ class Runner
         $cwd = $this->saver->getConfVal("cwd");
         if (is_null($cwd)) {
             $cwd = realpath(getcwd());
-            $cwd = $this->saver->setConfVal("cwd", $cwd);
+            $this->saver->setConfVal("cwd", $cwd);
         }
         chdir($cwd);
     }

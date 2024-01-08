@@ -123,18 +123,29 @@ class CommsManager
         $threadservice = $this->assistants->getThreadService();
         $messageservice = $this->assistants->getMessageService();
         $runservice = $this->assistants->getRunService();
-
+        
+        $runs = $runservice->listRuns($this->threadid);
+        /*
+        if (count($runs)) {
+            print_r($runs);
+        }
+        exit;
+        */
         $msgresp = $messageservice->create($this->threadid, $message);
         $runresp = $runservice->create($this->threadid, $this->assistantid);
         while(
-            $runresp['status'] == "queued" || 
-            $runresp['status'] == "in_progress"
-
-        ) {
+            isset($runresp['status']) && (
+                $runresp['status'] == "queued" || 
+                $runresp['status'] == "in_progress" || 
+                $runresp['status'] == "requires_action"
+            )) {
             $runresp = $runservice->retrieve($this->threadid, $runresp['id']);
+            if ($runresp['status'] == "requires_action") {
+                $this->handleRequiresAction($runresp);
+            }
             sleep(1);
         }
-        if ( $runresp['status'] != "completed" ) {
+        if ( ! isset($runresp['status']) || $runresp['status'] != "completed" ) {
             throw new \Exception("unknown issue with query: ".print_r($runresp, true));
         }
         $msgs = $messageservice->listMessages($this->threadid);
@@ -142,6 +153,78 @@ class CommsManager
         //$asstmessage = new Message(-1, "assistant", $resp);
         //$this->saver->saveMessage($asstmessage);
         return $resp;
+    }
+
+    public function getAssistantFunctionNames(): array
+    {
+        $ret = [];
+        foreach ($this->asstentity['tools'] as $tool) {
+            if ($tool['type'] == "function") {
+                $ret[] = $tool['function']['name'];
+            }
+        }
+        return $ret;
+    }
+
+    public function handleRequiresAction(array $runresp): void
+    {
+        $runservice = $this->assistants->getRunService();
+		$calls = $runresp['required_action']['submit_tool_outputs']['tool_calls'] ?? null;
+		if (is_null($calls)) {
+			throw new \Exception("unknown action data: ".print_r($runresp, true));
+		}
+
+		$outputs = [];
+		foreach ($calls as $call) {
+			$id = $call['id'];
+			$function = $call['function']['name'];
+			$arguments = $call['function']['arguments'];
+			// would now call out to a resolver	
+			$outputs[] = [
+				"tool_call_id" => $id,
+				"output" => "{[
+                    'ai client development',
+                    'PHP Book writing',
+                    'Python Book writing'
+                    ]}"
+			];
+		}
+        print "# submitting outputs ".print_r($outputs); 	
+		$toolresp = $runservice->submitToolOutputs(
+			$this->threadid,
+			$runresp['id'],	
+			$outputs
+		);
+		//print_r($toolresp);
+
+		// would now submit $output: https://platform.openai.com/docs/api-reference/runs/submitToolOutputs
+/*
+  "required_action": {
+    "type": "submit_tool_outputs",
+    "submit_tool_outputs": {
+      "tool_calls": [
+        {
+          "id": "call_abc123",
+          "type": "function",
+          "function": {
+            "name": "getCurrentWeather",
+            "arguments": "{\"location\":\"San Francisco\"}"
+          }
+        },
+*/
+    }
+
+    public function getMessages(): array {
+        $messageservice = $this->assistants->getMessageService();
+        $messages = $messageservice->listMessages($this->threadid);
+
+        $marray  = $messages['data'];
+        $ret = [];
+        foreach ($marray as $msg) {
+            $role = strtoupper($msg['role']);
+            $ret[] = "{$role}> ".$msg['content'][0]['text']['value'];
+        }
+        return $ret;
     }
 
     public function getAssistant() {

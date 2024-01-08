@@ -215,6 +215,14 @@ class ConvoSaver
 		return is_array($file) ? $file : null;
 	}
 
+	public function getFiles(): array
+    {
+		$stmt = $this->pdo->prepare("SELECT * FROM afile WHERE conversation_id = :conversation_id");
+		$stmt->execute([':conversation_id' => $this->convo_id]);
+		$files = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $files;
+    }
+
 	public function getFileByRemoteId(string $remoteid): ?array
 	{
 		$stmt = $this->pdo->prepare("SELECT * FROM afile WHERE remoteid= :remoteid AND conversation_id = :conversation_id");

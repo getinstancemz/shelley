@@ -1,4 +1,5 @@
 vendor
+.swp
 data
 slush
 conf/chat.json

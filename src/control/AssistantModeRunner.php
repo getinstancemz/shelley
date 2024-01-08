@@ -15,7 +15,12 @@ use getinstance\utils\aichat\uicommand\AssistantAFileCommand;
 use getinstance\utils\aichat\uicommand\AssistantAFileListCommand;
 use getinstance\utils\aichat\uicommand\AssistantADirCommand;
 use getinstance\utils\aichat\uicommand\AssistantDelFileCommand;
+use getinstance\utils\aichat\uicommand\AssistantFileSyncCommand;
 use getinstance\utils\aichat\uicommand\AssistantToolsCommand;
+use getinstance\utils\aichat\uicommand\AssistantListMessagesCommand;
+use getinstance\utils\aichat\uicommand\AssistantSetFunctionsCommand;
+
+use getinstance\utils\aichat\functions\FunctionRegistry;
 
 use getinstance\utils\aichat\ai\models\Model;
 use getinstance\utils\aichat\ai\Messages;
@@ -40,6 +45,9 @@ class AssistantModeRunner extends ModeRunner
         $this->addCommand(new AssistantDelFileCommand($ui, $runner, $this));
         $this->addCommand(new AssistantADirCommand($ui, $runner, $this));
         $this->addCommand(new AssistantToolsCommand($ui, $runner, $this));
+        $this->addCommand(new AssistantFileSyncCommand($ui, $runner));
+        $this->addCommand(new AssistantListMessagesCommand($ui, $runner));
+        $this->addCommand(new AssistantSetFunctionsCommand($ui, $runner));
         $this->initMessages();
     }
 
@@ -47,6 +55,12 @@ class AssistantModeRunner extends ModeRunner
     public function getFileManager(): FileManager
     {
         return new FileManager($this->comms, $this->saver);
+    }
+    
+    public function getFunctionRegistry(): FunctionRegistry
+    {
+
+        return new FunctionRegistry();
     }
 
     public function uploadAssistantDirectory($path): bool
@@ -108,7 +122,10 @@ class AssistantModeRunner extends ModeRunner
         // currently we don't set a model in Assistants mode
     }
 
-
+    public function getAssistantComms()
+    {
+        return $this->comms;
+    }
     public function setupAssistant()
     {
         // TODO - fix model handling
