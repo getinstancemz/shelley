@@ -80,6 +80,12 @@ class ConvoSaver
             name TEXT
         )");
 
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS sysconf (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            confkey TEXT,
+            confval TEXT
+        )");
+
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS convoconf (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             confkey TEXT,
@@ -99,6 +105,50 @@ class ConvoSaver
             type TEXT,
             FOREIGN KEY (conversation_id) REFERENCES conversation(id)
         )");
+    }
+
+    public function getSysConf(): array
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM sysconf");
+        $stmt->execute([]);
+        $conf = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if ($conf === false) {
+            return [];
+        }
+        $ret = [];
+        foreach ($conf as $row) {
+            $ret[$row['confkey']] = $row['confval'];
+        }
+
+        return $ret;
+    }
+
+    public function deleteSysConfVal($confkey): void
+    {
+        $oldconf = $this->getSysConf();
+        if (! isset($oldconf[$confkey])) {
+            return;
+        }
+        $stmt = $this->pdo->prepare("DELETE FROM sysconf WHERE confkey=:confkey");
+        $stmt->execute([ ':confkey' => $confkey ]);
+    }
+
+    public function setSysConfVal($confkey, $confval): void
+    {
+        $oldconf = $this->getSysConf();
+        if (isset($oldconf[$confkey])) {
+            $stmt = $this->pdo->prepare("UPDATE sysconf SET 
+                confkey = :confkey,
+                confval = :confval
+                WHERE confkey=:confkey");
+        } else {
+            $stmt = $this->pdo->prepare("INSERT INTO sysconf (confkey, confval)
+                VALUES (:confkey, :confval)");
+        }
+        $stmt->execute([
+            ':confkey' => $confkey,
+            ':confval' => $confval,
+        ]);
     }
 
     public function getConf(): array

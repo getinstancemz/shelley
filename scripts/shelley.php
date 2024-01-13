@@ -12,6 +12,8 @@ function usage(?string $msg = null): string
     $argv = $GLOBALS['argv'];
     $usage  = "\n";
     $usage .= sprintf("usage: %s [convo]\n", $argv[0]);
+    $usage .= "    -h        this help message\n";
+    $usage .= "    -k        kill any key set in local storage\n";
     $usage .= "\n";
     if (! is_null($msg)) {
         $usage .= "$msg\n\n";
@@ -26,8 +28,16 @@ function errorUsage(string $msg): void
     exit(1);
 }
 
+$options = getopt("kh", [], $rest_index);
+$myargs = array_slice($argv, $rest_index);
+
+if (isset($options['h'])) {
+    print usage(); 
+    exit(0);
+}
+
 // Set up the SQLite database connection
-$convo = $argv[1] ?? "default";
+$convo = $myargs[0] ?? "default";
 $conffile = __DIR__ . "/../conf/chat.json";
 
 if (file_exists($conffile)) {
@@ -37,15 +47,43 @@ if (file_exists($conffile)) {
     $conf->openai = new stdClass();
 }
 
-$conf->openai->token ??= getenv('OPENAI_API_KEY');
+$conf->datadir ??= __DIR__ . "/../data";
+$saver = new ConvoSaver($conf->datadir, $convo);
 
-if (empty($conf->openai->token)) {
-    errorUsage("could not find OpenAI token");
+if (isset($options['k'])) {
+    $saver->deleteSysConfVal("openai_token");
 }
 
-$conf->datadir ??= __DIR__ . "/../data";
+$conf->openai->token ??= getenv('OPENAI_API_KEY');
+$sysconf = $saver->getSysConf();
+if (empty($conf->openai->token) && ! empty($sysconf['openai_token'])) {
+    $conf->openai->token = $sysconf['openai_token'];
+}
 
-$saver = new ConvoSaver($conf->datadir, $convo);
+
+if (empty($conf->openai->token)) {
+    print "# no openai key found. Add one at the prompt or quit and rerun having either\n";
+    print "# - set up the configuration file at conf/chat.json\n";
+    print "# - set the environment variable OPENAI_API_KEY\n\n";
+    print "#"; 
+
+    $prompt = "Please enter the AI key to proceed ('q' to quit)";
+
+    while ($input = readline("# {$prompt}: ")) {
+        $input = trim($input);
+        if (empty($input)) {
+            continue;
+        }
+        if ($input == "q") {
+            exit(0);
+        }
+        $conf->openai->token = $input;
+        $saver->setSysConfVal("openai_token", $input);
+        break;
+    }
+}
+
+
 $runner = new Runner($conf, $saver);
 $ui = new ProcessUI($runner);
 $ui->run();

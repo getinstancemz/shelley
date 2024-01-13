@@ -1,0 +1,1 @@
+docker run -it --rm --name shelley-container -v "$PWD":/usr/src/myapp -w /usr/src/myapp php:8.3.0 php /usr/src/myapp/scripts/shelley.php $*

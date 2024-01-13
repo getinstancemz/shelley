@@ -87,7 +87,7 @@ class ProcessUI
         $this->initSummarise();
 
         $input = "";
-        while (($input = $this->process("USER      > ")) != "q\n") {
+        while (($input = $this->process("USER      > ")) !== false) {
             try {
                 print "# sending\n";
                 $resp = $this->runner->query($input);
@@ -116,18 +116,19 @@ class ProcessUI
             if ($this->hasContinuationEndChar($input, $buffer)) {
                 continue;
             }
+            if ((new ArbitraryCommand($this, $this->runner, "q"))->matches($input)) {
+                return false;
+            }
             if ((new ArbitraryCommand($this, $this->runner, "m"))->matches($input)) {
                 $final = $this->processMulti($buffer);
                 return $final;
             }
-
             
             if (! $this->invokeCommand($input, $buffer)) {
                 $buffer .= $input;
                 
                 break;
             }
-
         }
 
         if (preg_match("/^\s*+$/", $buffer)) {
@@ -159,6 +160,13 @@ class ProcessUI
             return true;
         }
         return false;
+    }
+
+    public function prompt(string $prompt): bool
+    {
+        print "# # {$prompt}\n";
+        $input = readline("#: ");
+        return $input;
     }
 
     private function hasContinuationEndChar(string $input, &$buffer)
