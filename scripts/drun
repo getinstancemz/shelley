@@ -1,1 +1,22 @@
-docker run -it --rm --name shelley-container -v "$PWD":/usr/src/myapp -w /usr/src/myapp php:8.3.0 php /usr/src/myapp/scripts/shelley.php $*
+script=`realpath $0`
+scriptdir=`dirname $script`
+appdir=`realpath $scriptdir/..`
+md5str=`echo $PWD | md5`
+workingdirmount=/var/shelley/mount/$md5str
+
+echo "appdir: $appdir"
+echo "pwd: $PWD"
+echo "mount: $workingdirmount"
+
+
+
+docker run -it \
+    --rm \
+    --name shelley-container-$$  \
+    -v "$appdir":/var/shelley \
+    -v "$PWD":$workingdirmount \
+    -w $workingdirmount \
+    php:8.3.0 \
+    php \
+    /var/shelley/scripts/shelley.php \
+    $*
