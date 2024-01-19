@@ -6,4 +6,4 @@ else
     cp -r /var/shelley-tools/vendor ../../.
 fi
 
-pwd
+php /var/shelley/scripts/shelley.php $*
