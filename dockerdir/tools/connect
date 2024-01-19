@@ -1,0 +1,1 @@
+docker run -it --rm --name shelley-container -v "$PWD":/var/shelley -w /var/shelley shelley /bin/bash
