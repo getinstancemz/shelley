@@ -16,4 +16,4 @@ docker run -it \
     -v "$PWD":$workingdirmount \
     -w $workingdirmount \
     shelley \
-    /var/shelley/scripts/forcontainer/runshelley $*
+    /var/shelley/dockerdir/forcontainer/runshelley $*
