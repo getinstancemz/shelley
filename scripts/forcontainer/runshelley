@@ -1,0 +1,9 @@
+if [ -d ../../vendor ]; then
+#    mv vendor /tmp/vendor.$$
+    echo "vendor directory exists"
+else
+    echo "copying vendor directory"
+    cp -r /var/shelley-tools/vendor ../../.
+fi
+
+pwd

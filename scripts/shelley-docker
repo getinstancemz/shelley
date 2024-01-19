@@ -9,7 +9,6 @@ echo "pwd: $PWD"
 echo "mount: $workingdirmount"
 
 
-
 docker run -it \
     --rm \
     --name shelley-container-$$  \
@@ -18,5 +17,5 @@ docker run -it \
     -w $workingdirmount \
     php:8.3.0 \
     php \
-    /var/shelley/scripts/shelley.php \
+    /var/shelley/scripts/runshelley.php \
     $*

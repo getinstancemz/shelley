@@ -1,6 +1,6 @@
 FROM php:8.3.0-cli-bullseye
 
-WORKDIR /var/shelley
+WORKDIR /var/shelley-tools
 
 COPY dockerdir/tools/getcomposer.sh /tmp
 COPY composer.json /var/shelley/

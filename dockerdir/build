@@ -1,1 +1,2 @@
+docker image rm shelley
 docker build -f ./dockerdir/Dockerfile -t shelley .
